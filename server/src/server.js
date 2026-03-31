@@ -67,6 +67,18 @@ app.use('/api/requests', require('./routes/requestRoutes'));
 app.use('/api/analytics', require('./routes/analyticsRoutes'));
 
 app.get('/api/health', (req, res) => res.json({ status: 'OK' }));
+app.get('/api/diag', (req, res) => {
+  res.json({
+    db: mongoose.connection.readyState === 1 ? 'Connected' : 'Disconnected',
+    vars: {
+      MONGODB_URI: !!process.env.MONGODB_URI,
+      JWT_SECRET: !!process.env.JWT_SECRET,
+      FRONTEND_URL: !!process.env.FRONTEND_URL,
+      PORT: process.env.PORT
+    },
+    env: process.env.NODE_ENV
+  });
+});
 
 const PORT = process.env.PORT || 5000;
 server.listen(PORT, () => console.log(`Server running on port ${PORT}`));

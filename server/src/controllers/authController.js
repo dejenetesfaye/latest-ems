@@ -21,8 +21,13 @@ const loginUser = async (req, res) => {
       });
     }
     res.status(401).json({ message: 'Invalid username or password' });
-  } catch {
-    res.status(500).json({ message: 'Server error' });
+  } catch (err) {
+    console.error('Login error detail:', err);
+    res.status(500).json({ 
+      message: 'Server error', 
+      error: err.message,
+      dbStatus: mongoose.connection.readyState === 1 ? 'Connected' : 'Disconnected'
+    });
   }
 };
 

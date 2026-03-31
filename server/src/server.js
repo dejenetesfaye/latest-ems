@@ -28,7 +28,27 @@ app.use(cors({
 app.use(express.json());
 
 mongoose.connect(process.env.MONGODB_URI)
-  .then(() => console.log('Connected to MongoDB'))
+  .then(async () => {
+    console.log('Connected to MongoDB');
+    // Auto-seed check
+    const User = require('./models/User');
+    const bcrypt = require('bcryptjs');
+    const userCount = await User.countDocuments();
+    if (userCount === 0) {
+      console.log('🌱 Database empty. Auto-seeding initial admin accounts...');
+      const hashedPassword = await bcrypt.hash('sys1212', await bcrypt.genSalt(10)); // Default secure seeding
+      const sys123 = await bcrypt.hash('sys123', await bcrypt.genSalt(10));
+      const admin123 = await bcrypt.hash('admin123', await bcrypt.genSalt(10));
+      
+      const systemadmin = await User.create({
+        name: 'System Admin', username: 'sysadmin', password: sys123, role: 'systemadmin'
+      });
+      await User.create({
+        name: 'Abebe Events', username: 'admin', password: admin123, role: 'superadmin', createdBy: systemadmin._id
+      });
+      console.log('✅ Auto-seed complete: sysadmin/sys123 and admin/admin123 created.');
+    }
+  })
   .catch((err) => console.error('MongoDB connection error:', err));
 
 io.on('connection', (socket) => {

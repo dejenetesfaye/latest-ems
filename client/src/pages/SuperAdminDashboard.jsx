@@ -5,7 +5,7 @@ import {
   Container, Typography, Box, Card, CardContent, Grid, Button, CircularProgress,
   Alert, Tabs, Tab, TextField, MenuItem, Table, TableBody, TableCell,
   TableContainer, TableHead, TableRow, Paper, IconButton, Chip, Dialog,
-  DialogTitle, DialogContent, DialogActions, Snackbar, AlertTitle
+  DialogTitle, DialogContent, DialogActions, Snackbar, AlertTitle, Tooltip as MuiTooltip
 } from '@mui/material';
 import {
   PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, Legend,
@@ -426,11 +426,11 @@ const SuperAdminDashboard = () => {
                     </TableCell>
                     <TableCell>
                       {ev.initialRequirements ? (
-                        <Tooltip title={ev.initialRequirements}>
+                        <MuiTooltip title={ev.initialRequirements}>
                           <Typography variant="caption" sx={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', maxWidth: 150 }}>
                             {ev.initialRequirements}
                           </Typography>
-                        </Tooltip>
+                        </MuiTooltip>
                       ) : '—'}
                     </TableCell>
                     <TableCell align="right">

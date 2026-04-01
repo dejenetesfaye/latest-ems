@@ -181,10 +181,10 @@ const ClientDashboard = () => {
                 <TableRow>
                   <TableCell>Resource</TableCell>
                   <TableCell>Qty</TableCell>
-                  <TableCell>Client Note</TableCell>
+                  <TableCell sx={{ display: { xs: 'none', lg: 'table-cell' } }}>Client Note</TableCell>
                   <TableCell>Status</TableCell>
-                  <TableCell>Date Requested</TableCell>
-                  <TableCell align="right">Confirmation Action</TableCell>
+                  <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>Date Requested</TableCell>
+                  <TableCell align="right">Action</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -194,9 +194,9 @@ const ClientDashboard = () => {
                   <TableRow key={req._id} hover>
                     <TableCell fontWeight="bold" color="primary.main">{req.resourceName}</TableCell>
                     <TableCell><Typography fontWeight="bold">{req.quantity}</Typography></TableCell>
-                    <TableCell>{req.note || '—'}</TableCell>
+                    <TableCell sx={{ display: { xs: 'none', lg: 'table-cell' } }}>{req.note || '—'}</TableCell>
                     <TableCell><Chip label={req.status} size="small" color={STATUS_COLOR[req.status] || 'default'} sx={{fontWeight:'bold'}} /></TableCell>
-                    <TableCell>{new Date(req.createdAt).toLocaleDateString()}</TableCell>
+                    <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>{new Date(req.createdAt).toLocaleDateString()}</TableCell>
                     <TableCell align="right">
                       {req.status === 'Fulfilled' ? (
                         <Button size="small" variant="contained" color="success" startIcon={<TaskAltIcon />} onClick={() => handleConfirm(req._id)}>

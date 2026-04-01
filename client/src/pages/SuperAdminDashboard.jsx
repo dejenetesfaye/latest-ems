@@ -45,6 +45,7 @@ const SuperAdminDashboard = () => {
   const [managers, setManagers] = useState([]);
   const [supervisors, setSupervisors] = useState([]);
   const [clients, setClients] = useState([]);
+  const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
 
   // Real-time Alerts
@@ -74,11 +75,12 @@ const SuperAdminDashboard = () => {
   const fetchAll = async () => {
     try {
       setLoading(true);
-      const [analyticsRes, usersRes, eventsRes, resourcesRes] = await Promise.all([
+      const [analyticsRes, usersRes, eventsRes, resourcesRes, requestsRes] = await Promise.all([
         api.get('/analytics'),
         api.get('/users'),
         api.get('/events'),
         api.get('/resources'),
+        api.get('/requests'),
       ]);
       setAnalytics(analyticsRes.data);
       setUsers(usersRes.data);
@@ -87,6 +89,7 @@ const SuperAdminDashboard = () => {
       setClients(usersRes.data.filter(u => u.role === 'client'));
       setEvents(eventsRes.data);
       setResources(resourcesRes.data);
+      setRequests(requestsRes.data);
     } catch (err) { console.error(err); }
     finally { setLoading(false); }
   };
@@ -262,6 +265,7 @@ const SuperAdminDashboard = () => {
         <Tab label={<Box display="flex" alignItems="center" gap={1}><PeopleIcon fontSize="small" /> Users</Box>} />
         <Tab label={<Box display="flex" alignItems="center" gap={1}><EventIcon fontSize="small" /> Events</Box>} />
         <Tab label={<Box display="flex" alignItems="center" gap={1}><InventoryIcon fontSize="small" /> Resources</Box>} />
+        <Tab label={<Box display="flex" alignItems="center" gap={1}><AssignmentIcon fontSize="small" /> Requests</Box>} />
       </Tabs>
 
       {/* ── TAB 0: ANALYTICS ── */}
@@ -336,20 +340,42 @@ const SuperAdminDashboard = () => {
               </Card>
             </Grid>
 
-            {/* Event Health Chart */}
+            {/* Performance Leaderboard */}
             <Grid item xs={12}>
-              <Card elevation={2} sx={{ borderRadius: 2, minHeight: 450 }}>
-                <CardContent sx={{ p: 4 }}>
-                  <Typography variant="h5" fontWeight="bold" mb={4} color="primary" textAlign="center">Event Health (Fulfillment Rate %)</Typography>
-                  <ResponsiveContainer width="100%" height={300}>
-                    <BarChart data={analytics.eventHealth}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#333" vertical={false} />
-                      <XAxis dataKey="name" stroke="#A3A3A3" />
-                      <YAxis domain={[0, 100]} stroke="#A3A3A3" />
-                      <Tooltip contentStyle={{ backgroundColor: 'rgba(0,0,0,0.8)', borderColor: '#D4AF37' }} />
-                      <Bar dataKey="health" name="Health %" fill="#FFDF00" radius={[5, 5, 0, 0]} />
-                    </BarChart>
-                  </ResponsiveContainer>
+              <Card elevation={2} sx={{ borderRadius: 2 }}>
+                <CardContent sx={{ p: { xs: 2, md: 4 } }}>
+                  <Typography variant="h5" fontWeight="bold" mb={4} color="primary" textAlign="center">Performer Leaderboard (Efficiency)</Typography>
+                  <TableContainer>
+                    <Table size="small">
+                      <TableHead>
+                        <TableRow>
+                          <TableCell>User</TableCell>
+                          <TableCell>Role</TableCell>
+                          <TableCell align="center">Assignments</TableCell>
+                          <TableCell align="center">Fulfillment %</TableCell>
+                          <TableCell align="center">Avg. Res Time</TableCell>
+                        </TableRow>
+                      </TableHead>
+                      <TableBody>
+                        {analytics.performerMetrics?.map((p, i) => (
+                          <TableRow key={i}>
+                            <TableCell fontWeight="bold">{p.name}</TableCell>
+                            <TableCell><Chip label={p.role} size="small" variant="outlined" sx={{ height: 20, fontSize: '0.65rem' }} /></TableCell>
+                            <TableCell align="center">{p.total}</TableCell>
+                            <TableCell align="center">
+                              <Box display="flex" alignItems="center" gap={1} justifyContent="center">
+                                <CircularProgress variant="determinate" value={p.fulfillmentRate} size={20} thickness={6} color={p.fulfillmentRate > 80 ? 'success' : 'warning'} />
+                                <Typography variant="caption" fontWeight="bold">{p.fulfillmentRate}%</Typography>
+                              </Box>
+                            </TableCell>
+                            <TableCell align="center">
+                              <Typography variant="caption" color="text.secondary">{p.avgResponseTime > 0 ? `${p.avgResponseTime}m` : '< 1m'}</Typography>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </TableContainer>
                 </CardContent>
               </Card>
             </Grid>
@@ -606,7 +632,52 @@ const SuperAdminDashboard = () => {
               <Button type="submit" form="resourceForm" variant="contained" disabled={submitLoading}>{submitLoading ? <CircularProgress size={24} /> : 'Save'}</Button>
             </DialogActions>
           </Dialog>
-          {/* Version Indicator for Deployment Verification */}
+          {/* ── TAB 4: REQUESTS (GLOBAL VISIBILITY) ── */}
+      {tab === 4 && (
+        <Box>
+          <Typography variant="h6" fontWeight="bold" mb={2}>All Resource Requests (Control Center)</Typography>
+          <TableContainer component={Paper} elevation={2} sx={{ borderRadius: 2 }}>
+            <Table>
+              <TableHead>
+                <TableRow>
+                  <TableCell>Event & Client</TableCell>
+                  <TableCell>Resource</TableCell>
+                  <TableCell align="center">Qty</TableCell>
+                  <TableCell>Status</TableCell>
+                  <TableCell>Assigned To</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {requests.length === 0 ? (
+                  <TableRow><TableCell colSpan={5} align="center" sx={{ py: 3, color: 'text.secondary' }}>No requests found.</TableCell></TableRow>
+                ) : requests.map(r => (
+                  <TableRow key={r._id} hover>
+                    <TableCell>
+                      <Typography variant="body2" fontWeight="bold">{r.eventId?.name}</Typography>
+                      <Typography variant="caption" color="text.secondary">Client: {r.clientId?.name}</Typography>
+                    </TableCell>
+                    <TableCell>
+                      <Typography variant="body2">{r.resourceName}</Typography>
+                      <Typography variant="caption" color="primary">{r.resourceId?.category}</Typography>
+                    </TableCell>
+                    <TableCell align="center" fontWeight="bold">{r.quantity}</TableCell>
+                    <TableCell>
+                      <Chip label={r.status} size="small" 
+                        color={r.status === 'Confirmed' ? 'success' : r.status === 'Rejected' ? 'error' : r.status === 'Pending' ? 'warning' : 'info'} 
+                        sx={{ fontSize: '0.7rem' }} 
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <Typography variant="caption" display="block">Mgr: {r.managerId?.name}</Typography>
+                      {r.supervisorId && <Typography variant="caption" display="block" color="text.secondary">Sup: {r.supervisorId.name}</Typography>}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        </Box>
+      )}
           <Box sx={{ mt: 6, pt: 2, borderTop: '1px solid rgba(212,175,55,0.1)', textAlign: 'center' }}>
             <Typography variant="caption" color="text.disabled" sx={{ fontSize: '0.6rem', letterSpacing: 1 }}>
               ⚡ EMS CORE ENGINE — v1.0.2-LATEST (Sync: {new Date().toLocaleDateString()})

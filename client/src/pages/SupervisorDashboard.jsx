@@ -114,12 +114,12 @@ const SupervisorDashboard = () => {
           <TableHead>
             <TableRow>
               <TableCell>Event</TableCell>
-              <TableCell>Client</TableCell>
+              <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>Client</TableCell>
               <TableCell>Resource</TableCell>
-              <TableCell>Category</TableCell>
+              <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>Category</TableCell>
               <TableCell>Qty</TableCell>
-              <TableCell>Status</TableCell>
-              <TableCell align="right">Mark Fulfilled</TableCell>
+              <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>Status</TableCell>
+              <TableCell align="right">Action</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -130,11 +130,11 @@ const SupervisorDashboard = () => {
             ) : approved.map(req => (
               <TableRow key={req._id} hover>
                 <TableCell>{req.eventId?.name}</TableCell>
-                <TableCell>{req.clientId?.name}</TableCell>
+                <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>{req.clientId?.name}</TableCell>
                 <TableCell fontWeight="bold" color="primary.main">{req.resourceName}</TableCell>
-                <TableCell><Chip label={req.resourceId?.category?.replace('_', ' ').toUpperCase()} size="small" variant="outlined" sx={{ color: 'text.secondary', borderColor: 'text.secondary' }}/></TableCell>
+                <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}><Chip label={req.resourceId?.category?.replace('_', ' ').toUpperCase()} size="small" variant="outlined" sx={{ color: 'text.secondary', borderColor: 'text.secondary' }}/></TableCell>
                 <TableCell><Typography fontWeight="bold">{req.quantity}</Typography></TableCell>
-                <TableCell><Chip label={req.status} size="small" color={getColor(req.status)} sx={{ fontWeight: 'bold' }}/></TableCell>
+                <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}><Chip label={req.status} size="small" color={getColor(req.status)} sx={{ fontWeight: 'bold' }}/></TableCell>
                 <TableCell align="right">
                   <Tooltip title="Mark resource as successfully delivered/fulfilled">
                     <IconButton color="primary" onClick={() => handleFulfill(req._id)}>

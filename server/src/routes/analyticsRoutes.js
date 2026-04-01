@@ -97,6 +97,32 @@ router.get('/', protect, authorize('superadmin', 'systemadmin'), async (req, res
       .slice(0, 6)
       .map(e => ({ name: e.name, cost: e.totalCost }));
 
+    // --- Performer Metrics (Performance Analytics) ---
+    const users = await User.find(userFilter).select('name role');
+    const performerMetrics = users.map(u => {
+      const userRequests = requests.filter(r => 
+        (u.role === 'manager' && r.managerId?.toString() === u._id.toString()) ||
+        (u.role === 'supervisor' && r.supervisorId?.toString() === u._id.toString())
+      );
+
+      const completed = userRequests.filter(r => ['Fulfilled', 'Confirmed'].includes(r.status)).length;
+      
+      // Calculate Avg Response Time (in minutes)
+      const timedRequests = userRequests.filter(r => r.respondedAt && r.createdAt);
+      const avgResponseMinutes = timedRequests.length > 0 
+        ? timedRequests.reduce((acc, r) => acc + (new Date(r.respondedAt) - new Date(r.createdAt)), 0) / (timedRequests.length * 60000)
+        : 0;
+
+      return {
+        name: u.name,
+        role: u.role,
+        total: userRequests.length,
+        completed,
+        avgResponseTime: Math.round(avgResponseMinutes),
+        fulfillmentRate: userRequests.length > 0 ? Math.round((completed / userRequests.length) * 100) : 0
+      };
+    }).filter(p => p.total > 0).sort((a, b) => b.fulfillmentRate - a.fulfillmentRate);
+
     res.json({
       totals: {
         users: totalUsers,
@@ -110,6 +136,7 @@ router.get('/', protect, authorize('superadmin', 'systemadmin'), async (req, res
       engagedUsers: engagedUsersData,
       eventHealth,
       recentEvents,
+      performerMetrics,
     });
   } catch (err) {
     res.status(500).json({ message: err.message });

@@ -23,6 +23,7 @@ const getRequests = async (req, res) => {
         .populate('eventId', 'name')
         .populate('clientId', 'name')
         .populate('managerId', 'name')
+        .populate('supervisorId', 'name')
         .populate('resourceId', 'name category');
     } else if (role === 'manager') {
       requests = await Request.find({ managerId: id })
@@ -123,6 +124,9 @@ const updateRequestStatus = async (req, res) => {
       return res.status(403).json({ message: `Cannot transition from ${request.status} to ${status}` });
 
     request.status = status;
+    if (['Approved', 'Rejected'].includes(status)) request.respondedAt = new Date();
+    if (status === 'Fulfilled') request.fulfilledAt = new Date();
+    
     await request.save();
 
     const updated = await Request.findById(request._id)

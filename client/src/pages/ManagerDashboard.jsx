@@ -126,11 +126,11 @@ const ManagerDashboard = () => {
           <TableHead>
             <TableRow>
               <TableCell>Event</TableCell>
-              <TableCell>Client</TableCell>
+              <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>Client</TableCell>
               <TableCell>Resource</TableCell>
-              <TableCell>Category</TableCell>
+              <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>Category</TableCell>
               <TableCell>Qty</TableCell>
-              <TableCell>Note</TableCell>
+              <TableCell sx={{ display: { xs: 'none', lg: 'table-cell' } }}>Note</TableCell>
               <TableCell align="right">Actions</TableCell>
             </TableRow>
           </TableHead>
@@ -142,11 +142,11 @@ const ManagerDashboard = () => {
             ) : pendingRequests.map(req => (
               <TableRow key={req._id} hover>
                 <TableCell>{req.eventId?.name}</TableCell>
-                <TableCell>{req.clientId?.name}</TableCell>
+                <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>{req.clientId?.name}</TableCell>
                 <TableCell fontWeight="bold" color="primary.main">{req.resourceName}</TableCell>
-                <TableCell><Chip label={req.resourceId?.category?.replace('_', ' ').toUpperCase()} size="small" variant="outlined" sx={{ color: 'text.secondary', borderColor: 'text.secondary' }}/></TableCell>
+                <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}><Chip label={req.resourceId?.category?.replace('_', ' ').toUpperCase()} size="small" variant="outlined" sx={{ color: 'text.secondary', borderColor: 'text.secondary' }}/></TableCell>
                 <TableCell><Typography fontWeight="bold">{req.quantity}</Typography></TableCell>
-                <TableCell>{req.note || '—'}</TableCell>
+                <TableCell sx={{ display: { xs: 'none', lg: 'table-cell' } }}>{req.note || '—'}</TableCell>
                 <TableCell align="right">
                   <Button size="small" variant="contained" color="success" startIcon={<CheckCircleIcon />}
                     sx={{ mr: 1 }} onClick={() => handleStatus(req._id, 'Approved')}>Approve</Button>

@@ -32,6 +32,8 @@ const requestSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
   },
+  respondedAt: { type: Date }, // When manager approves/rejects
+  fulfilledAt: { type: Date }, // When supervisor marks as fulfilled
 }, { timestamps: true });
 
 module.exports = mongoose.model('Request', requestSchema);

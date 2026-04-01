@@ -53,9 +53,9 @@ router.get('/', protect, authorize('superadmin', 'systemadmin'), async (req, res
 
     // User Engagement (Top 5 users by event assignment)
     const allAssignedUserIds = events.reduce((acc, ev) => {
-      acc.push(ev.managerId.toString());
+      if (ev.managerId) acc.push(ev.managerId.toString());
       if (ev.supervisorId) acc.push(ev.supervisorId.toString());
-      acc.push(ev.clientId.toString());
+      if (ev.clientId) acc.push(ev.clientId.toString());
       return acc;
     }, []);
 

@@ -1,20 +1,20 @@
 const Event = require('../models/Event');
 const User = require('../models/User');
 
-// Helper for automated status
+// Helper for automated status — uses findByIdAndUpdate to safely handle populated docs
 const updateEventStatus = async (event) => {
   const now = new Date();
   const start = new Date(event.date);
-  const end = event.endDate ? new Date(event.endDate) : start; 
-  let newStatus = event.status;
+  const end = event.endDate ? new Date(event.endDate) : null;
+  let newStatus;
 
   if (now < start) newStatus = 'Upcoming';
-  else if (now > end) newStatus = 'Terminated';
+  else if (end && now > end) newStatus = 'Terminated';
   else newStatus = 'Ongoing';
 
   if (newStatus !== event.status) {
-    event.status = newStatus;
-    await event.save();
+    await Event.findByIdAndUpdate(event._id, { status: newStatus });
+    event.status = newStatus; // update the in-memory object too
   }
   return event;
 };
@@ -101,7 +101,7 @@ const updateEvent = async (req, res) => {
     const finalEvent = await updateEventStatus(updated);
     
     // Notify about updates
-    const participants = [finalEvent.managerId._id, finalEvent.supervisorId?._id, finalEvent.clientId._id].filter(id => id);
+    const participants = [finalEvent.managerId?._id, finalEvent.supervisorId?._id, finalEvent.clientId?._id].filter(id => id);
     participants.forEach(pId => io.to(pId.toString()).emit('activity_update', { eventId: finalEvent._id }));
 
     res.json(finalEvent);

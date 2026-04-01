@@ -246,7 +246,7 @@ const SuperAdminDashboard = () => {
   if (loading && !analytics) return <Box display="flex" justifyContent="center" mt={10}><CircularProgress size={60} color="primary" /></Box>;
 
   return (
-    <Container maxWidth="xl" sx={{ py: 4 }}>
+    <Container maxWidth={false} sx={{ py: 4, px: { xs: 2, md: 6 } }}>
       {/* Socket Push Notification Alert */}
       <Snackbar open={socketAlert.show} autoHideDuration={8000} onClose={() => setSocketAlert({ show: false, message: '' })} anchorOrigin={{ vertical: 'top', horizontal: 'right' }}>
         <Alert severity="warning" variant="filled" onClose={() => setSocketAlert({ show: false, message: '' })} sx={{ width: '100%', borderLeft: '4px solid #000' }}>
@@ -278,25 +278,25 @@ const SuperAdminDashboard = () => {
             <Grid item xs={12} sm={6} md={3} lg={2.5}><StatCard icon={<AssignmentIcon fontSize="inherit" />} label="Requests" value={analytics.totals.requests} /></Grid>
           </Grid>
 
-          {/* Fully Separated Wide Layout */}
-          <Grid container spacing={10} justifyContent="center" direction="column" alignItems="center">
+          {/* Wide Grid Layout */}
+          <Grid container spacing={4}>
             {/* Requests by Status Pie */}
-            <Grid item xs={12} sx={{ width: '50%' }}>
-              <Card elevation={2} sx={{ borderRadius: 2, minHeight: 550, width: '100%' }}>
+            <Grid item xs={12} md={6}>
+              <Card elevation={2} sx={{ borderRadius: 2, minHeight: 450 }}>
                 <CardContent sx={{ p: 4 }}>
                   <Typography variant="h5" fontWeight="bold" mb={4} color="primary" textAlign="center">Requests by Status</Typography>
                   {analytics.requestsByStatus.length === 0 ? (
                     <Typography color="text.secondary" textAlign="center">No request data available.</Typography>
                   ) : (
-                    <ResponsiveContainer width="100%" height={400}>
+                    <ResponsiveContainer width="100%" height={300}>
                       <PieChart>
                         <Pie data={analytics.requestsByStatus} dataKey="value" nameKey="name"
-                          cx="50%" cy="50%" outerRadius={150}
+                          cx="50%" cy="50%" outerRadius={100}
                           label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}>
                           {analytics.requestsByStatus.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
                         </Pie>
                         <Tooltip contentStyle={{ backgroundColor: 'rgba(0,0,0,0.8)', borderColor: '#D4AF37' }} />
-                        <Legend verticalAlign="bottom" height={36} />
+                        <Legend verticalAlign="bottom" />
                       </PieChart>
                     </ResponsiveContainer>
                   )}
@@ -305,7 +305,7 @@ const SuperAdminDashboard = () => {
             </Grid>
 
             {/* Event Progress Monitor Bar */}
-            <Grid item xs={12} lg={6}>
+            <Grid item xs={12} md={6}>
               <Card elevation={2} sx={{ borderRadius: 2, minHeight: 450 }}>
                 <CardContent sx={{ p: 4 }}>
                   <Typography variant="h5" fontWeight="bold" mb={4} color="primary" textAlign="center">Event Progress Monitor</Typography>
@@ -323,7 +323,7 @@ const SuperAdminDashboard = () => {
             </Grid>
 
             {/* User Engagement Bar */}
-            <Grid item xs={12} lg={6}>
+            <Grid item xs={12} md={6}>
               <Card elevation={2} sx={{ borderRadius: 2, minHeight: 450 }}>
                 <CardContent sx={{ p: 4 }}>
                   <Typography variant="h5" fontWeight="bold" mb={4} color="primary" textAlign="center">User Engagement (Top Active)</Typography>
@@ -341,7 +341,7 @@ const SuperAdminDashboard = () => {
             </Grid>
 
             {/* Performance Leaderboard */}
-            <Grid item xs={12}>
+            <Grid item xs={12} md={6}>
               <Card elevation={2} sx={{ borderRadius: 2 }}>
                 <CardContent sx={{ p: { xs: 2, md: 4 } }}>
                   <Typography variant="h5" fontWeight="bold" mb={4} color="primary" textAlign="center">Performer Leaderboard (Efficiency)</Typography>
@@ -632,7 +632,10 @@ const SuperAdminDashboard = () => {
               <Button type="submit" form="resourceForm" variant="contained" disabled={submitLoading}>{submitLoading ? <CircularProgress size={24} /> : 'Save'}</Button>
             </DialogActions>
           </Dialog>
-          {/* ── TAB 4: REQUESTS (GLOBAL VISIBILITY) ── */}
+        </Box>
+      )}
+
+      {/* ── TAB 4: REQUESTS (GLOBAL VISIBILITY) ── */}
       {tab === 4 && (
         <Box>
           <Typography variant="h6" fontWeight="bold" mb={2}>All Resource Requests (Control Center)</Typography>
@@ -678,13 +681,13 @@ const SuperAdminDashboard = () => {
           </TableContainer>
         </Box>
       )}
-          <Box sx={{ mt: 6, pt: 2, borderTop: '1px solid rgba(212,175,55,0.1)', textAlign: 'center' }}>
-            <Typography variant="caption" color="text.disabled" sx={{ fontSize: '0.6rem', letterSpacing: 1 }}>
-              ⚡ EMS CORE ENGINE — v1.0.2-LATEST (Sync: {new Date().toLocaleDateString()})
-            </Typography>
-          </Box>
-        </Box>
-      )}
+
+      {/* Version Indicator Footer */}
+      <Box sx={{ mt: 8, pt: 2, borderTop: '1px solid rgba(212,175,55,0.1)', textAlign: 'center' }}>
+        <Typography variant="caption" color="text.disabled" sx={{ fontSize: '0.6rem', letterSpacing: 1 }}>
+          ⚡ EMS CORE ENGINE — v1.0.2-LATEST (Sync: {new Date().toLocaleDateString()})
+        </Typography>
+      </Box>
     </Container>
   );
 };

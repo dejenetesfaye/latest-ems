@@ -98,8 +98,16 @@ router.get('/', protect, authorize('superadmin', 'systemadmin'), async (req, res
       .map(e => ({ name: e.name, cost: e.totalCost }));
 
     // --- Performer Metrics (Performance Analytics) ---
-    const users = await User.find(userFilter).select('name role');
-    const performerMetrics = users.map(u => {
+    // Instead of filtering by organizationId, we find all unique managers/supervisors actually involved in these requests
+    const activeStaffIds = [...new Set(requests.reduce((acc, r) => {
+      if (r.managerId) acc.push(r.managerId.toString());
+      if (r.supervisorId) acc.push(r.supervisorId.toString());
+      return acc;
+    }, []))];
+
+    const activeUsers = await User.find({ _id: { $in: activeStaffIds } }).select('name role');
+    
+    const performerMetrics = activeUsers.map(u => {
       const userRequests = requests.filter(r => 
         (u.role === 'manager' && r.managerId?.toString() === u._id.toString()) ||
         (u.role === 'supervisor' && r.supervisorId?.toString() === u._id.toString())
@@ -121,7 +129,7 @@ router.get('/', protect, authorize('superadmin', 'systemadmin'), async (req, res
         avgResponseTime: Math.round(avgResponseMinutes),
         fulfillmentRate: userRequests.length > 0 ? Math.round((completed / userRequests.length) * 100) : 0
       };
-    }).filter(p => p.total > 0).sort((a, b) => b.fulfillmentRate - a.fulfillmentRate);
+    }).sort((a, b) => b.fulfillmentRate - a.fulfillmentRate);
 
     res.json({
       totals: {

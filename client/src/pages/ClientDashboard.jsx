@@ -94,8 +94,14 @@ const ClientDashboard = () => {
       <Box mb={4}>
         <Typography variant="h4" fontWeight="bold" color="primary">{event.name}</Typography>
         <Typography variant="body2" color="text.secondary">
-          {event.type} | {new Date(event.date).toLocaleDateString()} | Event Manager: {event.managerId?.name}
+          {event.type} | {new Date(event.date).toLocaleDateString()}{event.endDate ? ` – ${new Date(event.endDate).toLocaleDateString()}` : ''} | Event Manager: {event.managerId?.name}
         </Typography>
+        {event.initialRequirements && (
+          <Box sx={{ mt: 2, p: 1.5, bgcolor: 'rgba(212,175,55,0.05)', borderRadius: 1, border: '1px dashed #D4AF37', display: 'inline-block' }}>
+            <Typography variant="caption" fontWeight="bold" color="primary" display="block">📋 Initial Requirements:</Typography>
+            <Typography variant="body2">{event.initialRequirements}</Typography>
+          </Box>
+        )}
       </Box>
 
       {alert.show && <Alert severity={alert.severity} sx={{ mb: 3 }} onClose={() => setAlert({ ...alert, show: false })}>{alert.message}</Alert>}

@@ -50,8 +50,8 @@ const createEvent = async (req, res) => {
   const { name, type, date, endDate, initialRequirements, managerId, supervisorId, clientId } = req.body;
   const io = req.app.get('io');
   try {
-    if (!name || !type || !date || !endDate || !managerId || !clientId)
-      return res.status(400).json({ message: 'Please fill all required fields' });
+    if (!name || !type || !date || !managerId || !clientId)
+      return res.status(400).json({ message: 'Please fill all required fields (Name, Type, Date, Manager, Client)' });
 
     const event = await Event.create({
       name, type, date, endDate, initialRequirements,

@@ -175,7 +175,7 @@ const SuperAdminDashboard = () => {
       }
       setEventModal({ open: false, editing: null });
       fetchAll();
-    } catch (err) { showAlert('Error saving event', 'error'); }
+    } catch (err) { showAlert(err.response?.data?.message || err.message || 'Error saving event', 'error'); }
     finally { setSubmitLoading(false); }
   };
 

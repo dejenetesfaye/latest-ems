@@ -3,33 +3,36 @@ import api from '../services/api';
 import { SocketContext } from '../context/SocketContext';
 import {
   Container, Typography, Box, Table, TableBody, TableCell, TableContainer,
-  TableHead, TableRow, Paper, Chip, IconButton, CircularProgress, Alert, Tooltip
+  TableHead, TableRow, Paper, Chip, Card, CardContent, Grid,
+  IconButton, CircularProgress, Alert, Tooltip
 } from '@mui/material';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 
 const SupervisorDashboard = () => {
   const socket = useContext(SocketContext);
   const [requests, setRequests] = useState([]);
+  const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [alert, setAlert] = useState({ show: false, message: '', severity: 'success' });
 
-  const fetchRequests = async () => {
+  const fetchData = async () => {
     try {
       setLoading(true);
-      const res = await api.get('/requests');
-      setRequests(res.data);
+      const [reqRes, evtRes] = await Promise.all([api.get('/requests'), api.get('/events')]);
+      setRequests(reqRes.data);
+      setEvents(evtRes.data);
     } catch (err) { console.error(err); }
     finally { setLoading(false); }
   };
 
-  useEffect(() => { fetchRequests(); }, []);
+  useEffect(() => { fetchData(); }, []);
 
   useEffect(() => {
     if (!socket) return;
-    socket.on('request_updated', () => fetchRequests());
-    socket.on('request_created', () => fetchRequests());
-    socket.on('new_assignment', () => fetchRequests());
-    socket.on('activity_update', () => fetchRequests());
+    socket.on('request_updated', () => fetchData());
+    socket.on('request_created', () => fetchData());
+    socket.on('new_assignment', () => fetchData());
+    socket.on('activity_update', () => fetchData());
     return () => {
       socket.off('request_updated');
       socket.off('request_created');
@@ -42,6 +45,7 @@ const SupervisorDashboard = () => {
     try {
       await api.put(`/requests/${id}/status`, { status: 'Fulfilled' });
       setAlert({ show: true, message: 'Resource marked as successfully Fulfilled!', severity: 'success' });
+      fetchData();
     } catch (err) {
       setAlert({ show: true, message: err.response?.data?.message || 'Error', severity: 'error' });
     }
@@ -49,7 +53,6 @@ const SupervisorDashboard = () => {
 
   const approved = requests.filter(r => r.status === 'Approved');
   const history = requests.filter(r => ['Fulfilled', 'Confirmed'].includes(r.status));
-
   const getColor = (status) => ({ Approved: 'info', Fulfilled: 'primary', Confirmed: 'success' }[status] || 'default');
 
   return (
@@ -58,6 +61,38 @@ const SupervisorDashboard = () => {
       <Typography variant="body2" color="text.secondary" mb={4}>Ensure delivery of all approved resources</Typography>
 
       {alert.show && <Alert severity={alert.severity} sx={{ mb: 3 }} onClose={() => setAlert({ ...alert, show: false })}>{alert.message}</Alert>}
+
+      {/* My Assigned Events */}
+      {events.length > 0 && (
+        <Box mb={5}>
+          <Typography variant="h6" fontWeight="bold" mb={2}>My Assigned Events</Typography>
+          <Grid container spacing={3}>
+            {events.map(ev => (
+              <Grid item xs={12} sm={6} md={4} key={ev._id}>
+                <Card elevation={2}>
+                  <CardContent>
+                    <Typography variant="h6" fontWeight="bold" color="primary">{ev.name}</Typography>
+                    <Typography variant="body2" color="text.secondary" mb={1}>
+                      {ev.type} | {new Date(ev.date).toLocaleDateString()}{ev.endDate ? ` – ${new Date(ev.endDate).toLocaleDateString()}` : ''}
+                    </Typography>
+                    <Typography variant="body2" mb={1}>Manager: {ev.managerId?.name || '—'}</Typography>
+                    {ev.initialRequirements && (
+                      <Box sx={{ mt: 1, p: 1, bgcolor: 'rgba(212,175,55,0.05)', borderRadius: 1, border: '1px dashed #D4AF37' }}>
+                        <Typography variant="caption" fontWeight="bold" color="primary" display="block">Initial Requirements:</Typography>
+                        <Typography variant="caption">{ev.initialRequirements}</Typography>
+                      </Box>
+                    )}
+                    <Chip
+                      label={ev.status.toUpperCase()} size="small" sx={{ mt: 2, fontWeight: 'bold' }}
+                      color={ev.status === 'Upcoming' ? 'warning' : ev.status === 'Ongoing' ? 'info' : ev.status === 'Terminated' ? 'error' : 'success'}
+                    />
+                  </CardContent>
+                </Card>
+              </Grid>
+            ))}
+          </Grid>
+        </Box>
+      )}
 
       <Typography variant="h6" fontWeight="bold" mb={2}>
         Approved Requests — Action Required

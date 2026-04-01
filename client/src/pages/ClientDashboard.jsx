@@ -96,10 +96,22 @@ const ClientDashboard = () => {
         <Typography variant="body2" color="text.secondary">
           {event.type} | {new Date(event.date).toLocaleDateString()}{event.endDate ? ` – ${new Date(event.endDate).toLocaleDateString()}` : ''} | Event Manager: {event.managerId?.name}
         </Typography>
-        {event.initialRequirements && (
-          <Box sx={{ mt: 2, p: 1.5, bgcolor: 'rgba(212,175,55,0.05)', borderRadius: 1, border: '1px dashed #D4AF37', display: 'inline-block' }}>
-            <Typography variant="caption" fontWeight="bold" color="primary" display="block">📋 Initial Requirements:</Typography>
-            <Typography variant="body2">{event.initialRequirements}</Typography>
+        {Array.isArray(event.initialRequirements) && event.initialRequirements.length > 0 && (
+          <Box sx={{ mt: 2.5, p: 2, bgcolor: 'rgba(212,175,55,0.03)', borderRadius: 1.5, border: '1px dashed #D4AF37', display: 'inline-block', minWidth: 300 }}>
+            <Typography variant="caption" fontWeight="bold" color="primary" display="block" mb={1}>📋 Initial Scope / Resources:</Typography>
+            <Table size="small">
+              <TableBody>
+                {event.initialRequirements.map((r, i) => (
+                  <TableRow key={i} sx={{ '& td': { border: 0, p: 0.2 } }}>
+                    <TableCell><Typography variant="body2" fontWeight="medium">{r.name}</Typography></TableCell>
+                    <TableCell align="right"><Typography variant="body2" fontWeight="bold">x{r.quantity}</Typography></TableCell>
+                    <TableCell align="right">
+                      <Chip label={r.category?.replace('_', ' ').toUpperCase()} size="small" variant="outlined" sx={{ height: 18, fontSize: '0.65rem' }} />
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
           </Box>
         )}
       </Box>

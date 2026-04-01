@@ -58,7 +58,11 @@ const SuperAdminDashboard = () => {
 
   // Forms
   const [userForm, setUserForm] = useState({ name: '', username: '', password: '', role: 'manager' });
-  const [eventForm, setEventForm] = useState({ name: '', type: 'Wedding', date: '', endDate: '', initialRequirements: '', managerId: '', supervisorId: '', clientId: '' });
+  const [eventForm, setEventForm] = useState({ 
+    name: '', type: 'Wedding', date: '', endDate: '', 
+    initialRequirements: [], 
+    managerId: '', supervisorId: '', clientId: '' 
+  });
   const [resourceForm, setResourceForm] = useState({ name: '', category: 'plate', unitCost: '', availableQuantity: '', description: '' });
   const [submitLoading, setSubmitLoading] = useState(false);
 
@@ -153,14 +157,39 @@ const SuperAdminDashboard = () => {
       setEventForm({
         name: ev.name, type: ev.type, date: ev.date.split('T')[0],
         endDate: ev.endDate ? ev.endDate.split('T')[0] : '',
-        initialRequirements: ev.initialRequirements || '',
+        initialRequirements: Array.isArray(ev.initialRequirements) ? ev.initialRequirements : [],
         managerId: ev.managerId?._id || '', supervisorId: ev.supervisorId?._id || '', clientId: ev.clientId?._id || ''
       });
       setEventModal({ open: true, editing: ev._id });
     } else {
-      setEventForm({ name: '', type: 'Wedding', date: '', endDate: '', initialRequirements: '', managerId: '', supervisorId: '', clientId: '' });
+      setEventForm({ name: '', type: 'Wedding', date: '', endDate: '', initialRequirements: [], managerId: '', supervisorId: '', clientId: '' });
       setEventModal({ open: true, editing: null });
     }
+  };
+
+  const addRequirement = () => {
+    setEventForm({
+      ...eventForm,
+      initialRequirements: [...eventForm.initialRequirements, { resourceId: '', name: '', category: '', quantity: 1, unitCost: 0 }]
+    });
+  };
+
+  const updateRequirement = (index, field, value) => {
+    const updated = [...eventForm.initialRequirements];
+    if (field === 'resourceId') {
+      const res = resources.find(r => r._id === value);
+      if (res) {
+        updated[index] = { ...updated[index], resourceId: value, name: res.name, category: res.category, unitCost: res.unitCost };
+      }
+    } else {
+      updated[index] = { ...updated[index], [field]: value };
+    }
+    setEventForm({ ...eventForm, initialRequirements: updated });
+  };
+
+  const removeRequirement = (index) => {
+    const updated = eventForm.initialRequirements.filter((_, i) => i !== index);
+    setEventForm({ ...eventForm, initialRequirements: updated });
   };
 
   const handleSaveEvent = async (e) => {
@@ -425,10 +454,18 @@ const SuperAdminDashboard = () => {
                       <Chip label={ev.status} size="xs" color={ev.status === 'Terminated' ? 'error' : ev.status === 'Ongoing' ? 'success' : 'info'} sx={{ mt: 0.5, height: 20, fontSize: '0.65rem' }} />
                     </TableCell>
                     <TableCell>
-                      {ev.initialRequirements ? (
-                        <MuiTooltip title={ev.initialRequirements}>
-                          <Typography variant="caption" sx={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', maxWidth: 150 }}>
-                            {ev.initialRequirements}
+                      {Array.isArray(ev.initialRequirements) && ev.initialRequirements.length > 0 ? (
+                        <MuiTooltip title={
+                          <Box sx={{ p: 0.5 }}>
+                            {ev.initialRequirements.map((r, i) => (
+                              <Typography key={i} variant="caption" display="block">
+                                • {r.name} x{r.quantity} ({r.category?.replace('_', ' ')})
+                              </Typography>
+                            ))}
+                          </Box>
+                        }>
+                          <Typography variant="caption" color="primary" fontWeight="bold" sx={{ cursor: 'help', borderBottom: '1px dashed' }}>
+                            {ev.initialRequirements.length} Items Selected
                           </Typography>
                         </MuiTooltip>
                       ) : '—'}
@@ -459,7 +496,38 @@ const SuperAdminDashboard = () => {
                     <TextField fullWidth type="date" label="End Date (optional)" margin="normal" size="small" InputLabelProps={{ shrink: true }} value={eventForm.endDate} onChange={e => setEventForm({ ...eventForm, endDate: e.target.value })} />
                   </Grid>
                 </Grid>
-                <TextField fullWidth label="Initial Resources / Requirements" margin="normal" size="small" multiline rows={3} placeholder="Example: 500 Plates, 20 Staff, Main Hall, Sound System..." sx={{ '& .MuiOutlinedInput-root': { bgcolor: 'rgba(212,175,55,0.02)' } }} value={eventForm.initialRequirements} onChange={e => setEventForm({ ...eventForm, initialRequirements: e.target.value })} />
+                <Box sx={{ mt: 3, mb: 2, p: 2, border: '1px dashed rgba(212,175,55,0.4)', borderRadius: 2 }}>
+                  <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+                    <Typography variant="subtitle2" fontWeight="bold" color="primary">Initial Resources / Requirements</Typography>
+                    <Button size="small" variant="outlined" startIcon={<AddIcon />} onClick={addRequirement}>Add Item</Button>
+                  </Box>
+                  {eventForm.initialRequirements.length === 0 ? (
+                    <Typography variant="caption" color="text.secondary">No initial resources specified. Click "Add Item" to begin scope.</Typography>
+                  ) : eventForm.initialRequirements.map((req, i) => (
+                    <Grid container spacing={1} key={i} alignItems="center" sx={{ mb: 1.5 }}>
+                      <Grid item xs={5}>
+                        <TextField select fullWidth label="Resource" size="small" value={req.resourceId} onChange={e => updateRequirement(i, 'resourceId', e.target.value)}>
+                          {resources.map(r => (
+                            <MenuItem key={r._id} value={r._id}>
+                              {r.name} ({r.availableQuantity} avail)
+                            </MenuItem>
+                          ))}
+                        </TextField>
+                      </Grid>
+                      <Grid item xs={3}>
+                        <TextField fullWidth label="Qty" type="number" size="small" value={req.quantity} onChange={e => updateRequirement(i, 'quantity', e.target.value)}
+                          error={resources.find(r => r._id === req.resourceId)?.availableQuantity < req.quantity} />
+                      </Grid>
+                      <Grid item xs={3}>
+                        <Typography variant="caption" display="block" color="text.secondary">{req.category?.replace('_', ' ')}</Typography>
+                        <Typography variant="caption" fontWeight="bold">${req.unitCost * req.quantity}</Typography>
+                      </Grid>
+                      <Grid item xs={1}>
+                        <IconButton size="small" color="error" onClick={() => removeRequirement(i)}><DeleteIcon fontSize="small" /></IconButton>
+                      </Grid>
+                    </Grid>
+                  ))}
+                </Box>
                 <TextField select fullWidth label="Assign Manager" margin="normal" size="small" required value={eventForm.managerId} onChange={e => setEventForm({ ...eventForm, managerId: e.target.value })}>
                   {managers.map(m => <MenuItem key={m._id} value={m._id}>{m.name}</MenuItem>)}
                 </TextField>

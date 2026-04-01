@@ -5,7 +5,13 @@ const eventSchema = new mongoose.Schema({
   type: { type: String, required: true },
   date: { type: Date, required: true },
   endDate: { type: Date, default: null },
-  initialRequirements: { type: String, default: '' },
+  initialRequirements: [{
+    resourceId: { type: mongoose.Schema.Types.ObjectId, ref: 'Resource' },
+    name: String,
+    category: String,
+    quantity: { type: Number, default: 1 },
+    unitCost: { type: Number, default: 0 },
+  }],
   superAdminId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',

@@ -76,10 +76,20 @@ const SupervisorDashboard = () => {
                       {ev.type} | {new Date(ev.date).toLocaleDateString()}{ev.endDate ? ` – ${new Date(ev.endDate).toLocaleDateString()}` : ''}
                     </Typography>
                     <Typography variant="body2" mb={1}>Manager: {ev.managerId?.name || '—'}</Typography>
-                    {ev.initialRequirements && (
-                      <Box sx={{ mt: 1, p: 1, bgcolor: 'rgba(212,175,55,0.05)', borderRadius: 1, border: '1px dashed #D4AF37' }}>
-                        <Typography variant="caption" fontWeight="bold" color="primary" display="block">Initial Requirements:</Typography>
-                        <Typography variant="caption">{ev.initialRequirements}</Typography>
+                    {Array.isArray(ev.initialRequirements) && ev.initialRequirements.length > 0 && (
+                      <Box sx={{ mt: 1.5, p: 1.5, bgcolor: 'rgba(212,175,55,0.03)', borderRadius: 1.5, border: '1px dashed #D4AF37' }}>
+                        <Typography variant="caption" fontWeight="bold" color="primary" display="block" mb={0.5}>Initial Scope / Requirements:</Typography>
+                        <Table size="small">
+                          <TableBody>
+                            {ev.initialRequirements.map((r, i) => (
+                              <TableRow key={i} sx={{ '& td': { border: 0, p: 0.2 } }}>
+                                <TableCell><Typography variant="caption" fontWeight="medium">{r.name}</Typography></TableCell>
+                                <TableCell align="right"><Typography variant="caption" fontWeight="bold">x{r.quantity}</Typography></TableCell>
+                                <TableCell align="right"><Chip label={r.category?.replace('_', ' ')} size="small" variant="outlined" sx={{ height: 16, fontSize: '0.6rem', color: 'text.secondary' }} /></TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
                       </Box>
                     )}
                     <Chip

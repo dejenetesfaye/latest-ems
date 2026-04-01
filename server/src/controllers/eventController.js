@@ -60,7 +60,7 @@ const createEvent = async (req, res) => {
     const event = await Event.create({
       name, type, date, 
       endDate: endDate || null, // Convert empty string or missing date to null
-      initialRequirements,
+      initialRequirements: initialRequirements || [],
       superAdminId: req.user.id,
       managerId,
       supervisorId: supervisorId || null,
@@ -103,6 +103,10 @@ const updateEvent = async (req, res) => {
   try {
     const data = { ...req.body };
     if (data.endDate === '') data.endDate = null; // Clean up empty date
+    if (data.initialRequirements) {
+      // Ensure it's stored as a structured array
+      data.initialRequirements = Array.isArray(data.initialRequirements) ? data.initialRequirements : [];
+    }
 
     const updated = await Event.findByIdAndUpdate(req.params.id, data, { new: true })
       .populate('managerId', 'name username')

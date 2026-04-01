@@ -4,6 +4,8 @@ const eventSchema = new mongoose.Schema({
   name: { type: String, required: true },
   type: { type: String, required: true },
   date: { type: Date, required: true },
+  endDate: { type: Date, required: true },
+  initialRequirements: { type: String, default: '' },
   superAdminId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
@@ -27,7 +29,7 @@ const eventSchema = new mongoose.Schema({
   totalCost: { type: Number, default: 0 },
   status: {
     type: String,
-    enum: ['Upcoming', 'Ongoing', 'Completed'],
+    enum: ['Upcoming', 'Ongoing', 'Terminated'],
     default: 'Upcoming',
   },
 }, { timestamps: true });

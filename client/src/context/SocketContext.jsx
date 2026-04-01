@@ -15,6 +15,10 @@ export const SocketProvider = ({ children }) => {
       const newSocket = io(socketUrl, {
         withCredentials: true,
       });
+      newSocket.on('connect', () => {
+        newSocket.emit('join', user._id);
+        console.log('Joined real-time room:', user._id);
+      });
       setSocket(newSocket);
 
       return () => {

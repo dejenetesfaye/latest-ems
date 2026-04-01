@@ -35,6 +35,8 @@ const ManagerDashboard = () => {
     if (!socket) return;
     socket.on('request_created', () => fetchData());
     socket.on('request_updated', () => fetchData());
+    socket.on('new_assignment', () => fetchData());
+    socket.on('activity_update', () => fetchData());
     socket.on('inventory_alert', (data) => {
       setSocketAlert({ show: true, message: data.message });
       fetchData();
@@ -42,6 +44,8 @@ const ManagerDashboard = () => {
     return () => {
       socket.off('request_created');
       socket.off('request_updated');
+      socket.off('new_assignment');
+      socket.off('activity_update');
       socket.off('inventory_alert');
     };
   }, [socket]);
@@ -83,10 +87,16 @@ const ManagerDashboard = () => {
                 <Card elevation={2}>
                   <CardContent>
                     <Typography variant="h6" fontWeight="bold" color="primary">{ev.name}</Typography>
-                    <Typography variant="body2" color="text.secondary" mb={1}>{ev.type} | {new Date(ev.date).toLocaleDateString()}</Typography>
+                    <Typography variant="body2" color="text.secondary" mb={1}>{ev.type} | {new Date(ev.date).toLocaleDateString()} - {ev.endDate ? new Date(ev.endDate).toLocaleDateString() : '?'}</Typography>
                     <Typography variant="body2">Client: {ev.clientId?.name || '—'}</Typography>
+                    {ev.initialRequirements && (
+                      <Box sx={{ mt: 1, p: 1, bgcolor: 'rgba(212,175,55,0.05)', borderRadius: 1, border: '1px dashed #D4AF37' }}>
+                        <Typography variant="caption" fontWeight="bold" color="primary" display="block">Initial Requirements:</Typography>
+                        <Typography variant="caption">{ev.initialRequirements}</Typography>
+                      </Box>
+                    )}
                     <Chip label={ev.status.toUpperCase()} size="small" sx={{ mt: 2, fontWeight: 'bold' }}
-                      color={ev.status === 'Upcoming' ? 'warning' : ev.status === 'Ongoing' ? 'info' : 'success'} />
+                      color={ev.status === 'Upcoming' ? 'warning' : ev.status === 'Ongoing' ? 'info' : ev.status === 'Terminated' ? 'error' : 'success'} />
                   </CardContent>
                 </Card>
               </Grid>

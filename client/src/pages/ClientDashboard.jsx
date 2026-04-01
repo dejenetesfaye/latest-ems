@@ -42,7 +42,13 @@ const ClientDashboard = () => {
   useEffect(() => {
     if (!socket) return;
     socket.on('request_updated', () => fetchData());
-    return () => socket.off('request_updated');
+    socket.on('new_assignment', () => fetchData());
+    socket.on('activity_update', () => fetchData());
+    return () => {
+      socket.off('request_updated');
+      socket.off('new_assignment');
+      socket.off('activity_update');
+    };
   }, [socket]);
 
   const handleSendRequest = async (e) => {

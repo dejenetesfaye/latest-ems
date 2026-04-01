@@ -27,7 +27,15 @@ const SupervisorDashboard = () => {
   useEffect(() => {
     if (!socket) return;
     socket.on('request_updated', () => fetchRequests());
-    return () => socket.off('request_updated');
+    socket.on('request_created', () => fetchRequests());
+    socket.on('new_assignment', () => fetchRequests());
+    socket.on('activity_update', () => fetchRequests());
+    return () => {
+      socket.off('request_updated');
+      socket.off('request_created');
+      socket.off('new_assignment');
+      socket.off('activity_update');
+    };
   }, [socket]);
 
   const handleFulfill = async (id) => {

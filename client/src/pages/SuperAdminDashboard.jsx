@@ -58,7 +58,7 @@ const SuperAdminDashboard = () => {
 
   // Forms
   const [userForm, setUserForm] = useState({ name: '', username: '', password: '', role: 'manager' });
-  const [eventForm, setEventForm] = useState({ name: '', type: 'Wedding', date: '', managerId: '', supervisorId: '', clientId: '' });
+  const [eventForm, setEventForm] = useState({ name: '', type: 'Wedding', date: '', endDate: '', initialRequirements: '', managerId: '', supervisorId: '', clientId: '' });
   const [resourceForm, setResourceForm] = useState({ name: '', category: 'plate', unitCost: '', availableQuantity: '', description: '' });
   const [submitLoading, setSubmitLoading] = useState(false);
 
@@ -100,11 +100,15 @@ const SuperAdminDashboard = () => {
 
     socket.on('request_created', () => fetchAll());
     socket.on('request_updated', () => fetchAll());
+    socket.on('new_assignment', () => fetchAll());
+    socket.on('activity_update', () => fetchAll());
 
     return () => {
       socket.off('inventory_alert');
       socket.off('request_created');
       socket.off('request_updated');
+      socket.off('new_assignment');
+      socket.off('activity_update');
     };
   }, [socket]);
 
@@ -148,11 +152,13 @@ const SuperAdminDashboard = () => {
     if (ev) {
       setEventForm({
         name: ev.name, type: ev.type, date: ev.date.split('T')[0],
+        endDate: ev.endDate ? ev.endDate.split('T')[0] : '',
+        initialRequirements: ev.initialRequirements || '',
         managerId: ev.managerId?._id || '', supervisorId: ev.supervisorId?._id || '', clientId: ev.clientId?._id || ''
       });
       setEventModal({ open: true, editing: ev._id });
     } else {
-      setEventForm({ name: '', type: 'Wedding', date: '', managerId: '', supervisorId: '', clientId: '' });
+      setEventForm({ name: '', type: 'Wedding', date: '', endDate: '', initialRequirements: '', managerId: '', supervisorId: '', clientId: '' });
       setEventModal({ open: true, editing: null });
     }
   };
@@ -266,17 +272,53 @@ const SuperAdminDashboard = () => {
             </Grid>
 
             {/* Event Progress Monitor Bar */}
-            <Grid item xs={12} sx={{ width: '50%' }}>
-              <Card elevation={2} sx={{ borderRadius: 2, minHeight: 550, width: '100%' }}>
+            <Grid item xs={12} lg={6}>
+              <Card elevation={2} sx={{ borderRadius: 2, minHeight: 450 }}>
                 <CardContent sx={{ p: 4 }}>
                   <Typography variant="h5" fontWeight="bold" mb={4} color="primary" textAlign="center">Event Progress Monitor</Typography>
-                  <ResponsiveContainer width="100%" height={400}>
-                    <BarChart data={analytics.eventsByStatus} margin={{ top: 20, right: 30, left: 10, bottom: 20 }}>
+                  <ResponsiveContainer width="100%" height={300}>
+                    <BarChart data={analytics.eventsByStatus}>
                       <CartesianGrid strokeDasharray="3 3" stroke="#333" vertical={false} />
                       <XAxis dataKey="name" stroke="#A3A3A3" />
                       <YAxis allowDecimals={false} stroke="#A3A3A3" />
-                      <Tooltip contentStyle={{ backgroundColor: 'rgba(0,0,0,0.8)', borderColor: '#D4AF37' }} cursor={{ fill: 'rgba(212,175,55,0.1)' }} />
-                      <Bar dataKey="value" name="Events" fill="#D4AF37" radius={[10, 10, 0, 0]} barSize={100} />
+                      <Tooltip contentStyle={{ backgroundColor: 'rgba(0,0,0,0.8)', borderColor: '#D4AF37' }} />
+                      <Bar dataKey="value" name="Events" fill="#D4AF37" radius={[5, 5, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </CardContent>
+              </Card>
+            </Grid>
+
+            {/* User Engagement Bar */}
+            <Grid item xs={12} lg={6}>
+              <Card elevation={2} sx={{ borderRadius: 2, minHeight: 450 }}>
+                <CardContent sx={{ p: 4 }}>
+                  <Typography variant="h5" fontWeight="bold" mb={4} color="primary" textAlign="center">User Engagement (Top Active)</Typography>
+                  <ResponsiveContainer width="100%" height={300}>
+                    <BarChart data={analytics.engagedUsers} layout="vertical">
+                      <CartesianGrid strokeDasharray="3 3" stroke="#333" horizontal={false} />
+                      <XAxis type="number" stroke="#A3A3A3" />
+                      <YAxis dataKey="name" type="category" stroke="#A3A3A3" width={100} />
+                      <Tooltip contentStyle={{ backgroundColor: 'rgba(0,0,0,0.8)', borderColor: '#D4AF37' }} />
+                      <Bar dataKey="value" name="Assignments" fill="#C5A017" radius={[0, 5, 5, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </CardContent>
+              </Card>
+            </Grid>
+
+            {/* Event Health Chart */}
+            <Grid item xs={12}>
+              <Card elevation={2} sx={{ borderRadius: 2, minHeight: 450 }}>
+                <CardContent sx={{ p: 4 }}>
+                  <Typography variant="h5" fontWeight="bold" mb={4} color="primary" textAlign="center">Event Health (Fulfillment Rate %)</Typography>
+                  <ResponsiveContainer width="100%" height={300}>
+                    <BarChart data={analytics.eventHealth}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#333" vertical={false} />
+                      <XAxis dataKey="name" stroke="#A3A3A3" />
+                      <YAxis domain={[0, 100]} stroke="#A3A3A3" />
+                      <Tooltip contentStyle={{ backgroundColor: 'rgba(0,0,0,0.8)', borderColor: '#D4AF37' }} />
+                      <Bar dataKey="health" name="Health %" fill="#FFDF00" radius={[5, 5, 0, 0]} />
                     </BarChart>
                   </ResponsiveContainer>
                 </CardContent>
@@ -361,9 +403,9 @@ const SuperAdminDashboard = () => {
                 <TableRow>
                   <TableCell>Event Name</TableCell>
                   <TableCell>Type</TableCell>
-                  <TableCell>Date</TableCell>
-                  <TableCell>Client</TableCell>
-                  <TableCell>Personnel</TableCell>
+                  <TableCell>Duration</TableCell>
+                  <TableCell>Personnel & Status</TableCell>
+                  <TableCell>Requirements</TableCell>
                   <TableCell align="right">Actions</TableCell>
                 </TableRow>
               </TableHead>
@@ -374,11 +416,22 @@ const SuperAdminDashboard = () => {
                   <TableRow key={ev._id} hover>
                     <TableCell fontWeight="bold">{ev.name}</TableCell>
                     <TableCell>{ev.type}</TableCell>
-                    <TableCell>{new Date(ev.date).toLocaleDateString()}</TableCell>
-                    <TableCell>{ev.clientId?.name || '—'}</TableCell>
                     <TableCell>
-                      <Typography variant="caption" display="block">Mgr: {ev.managerId?.name}</Typography>
+                      {new Date(ev.date).toLocaleDateString()} - {ev.endDate ? new Date(ev.endDate).toLocaleDateString() : '—'}
+                    </TableCell>
+                    <TableCell>
+                      <Typography variant="body2" fontWeight="medium">Mgr: {ev.managerId?.name}</Typography>
                       {ev.supervisorId && <Typography variant="caption" display="block">Sup: {ev.supervisorId.name}</Typography>}
+                      <Chip label={ev.status} size="xs" color={ev.status === 'Terminated' ? 'error' : ev.status === 'Ongoing' ? 'success' : 'info'} sx={{ mt: 0.5, height: 20, fontSize: '0.65rem' }} />
+                    </TableCell>
+                    <TableCell>
+                      {ev.initialRequirements ? (
+                        <Tooltip title={ev.initialRequirements}>
+                          <Typography variant="caption" sx={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', maxWidth: 150 }}>
+                            {ev.initialRequirements}
+                          </Typography>
+                        </Tooltip>
+                      ) : '—'}
                     </TableCell>
                     <TableCell align="right">
                       <IconButton color="info" onClick={() => handleOpenEventModal(ev)}><EditIcon /></IconButton>
@@ -398,7 +451,15 @@ const SuperAdminDashboard = () => {
                 <TextField select fullWidth label="Event Type" margin="normal" size="small" required value={eventForm.type} onChange={e => setEventForm({ ...eventForm, type: e.target.value })}>
                   {['Wedding', 'Birthday', 'Corporate', 'Party', 'Conference', 'Other'].map(t => <MenuItem key={t} value={t}>{t}</MenuItem>)}
                 </TextField>
-                <TextField fullWidth type="date" label="Date" margin="normal" size="small" InputLabelProps={{ shrink: true }} required value={eventForm.date} onChange={e => setEventForm({ ...eventForm, date: e.target.value })} />
+                <Grid container spacing={2}>
+                  <Grid item xs={6}>
+                    <TextField fullWidth type="date" label="Start Date" margin="normal" size="small" InputLabelProps={{ shrink: true }} required value={eventForm.date} onChange={e => setEventForm({ ...eventForm, date: e.target.value })} />
+                  </Grid>
+                  <Grid item xs={6}>
+                    <TextField fullWidth type="date" label="End Date" margin="normal" size="small" InputLabelProps={{ shrink: true }} required value={eventForm.endDate} onChange={e => setEventForm({ ...eventForm, endDate: e.target.value })} />
+                  </Grid>
+                </Grid>
+                <TextField fullWidth label="Initial Resource Requirements" margin="normal" size="small" multiline rows={3} placeholder="Example: 500 Plates, 20 Staff, Main Hall..." value={eventForm.initialRequirements} onChange={e => setEventForm({ ...eventForm, initialRequirements: e.target.value })} />
                 <TextField select fullWidth label="Assign Manager" margin="normal" size="small" required value={eventForm.managerId} onChange={e => setEventForm({ ...eventForm, managerId: e.target.value })}>
                   {managers.map(m => <MenuItem key={m._id} value={m._id}>{m.name}</MenuItem>)}
                 </TextField>

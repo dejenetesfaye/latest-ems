@@ -48,8 +48,39 @@ router.get('/', protect, authorize('superadmin', 'systemadmin'), async (req, res
     const eventsByStatus = [
       { name: 'Upcoming', value: events.filter(e => e.status === 'Upcoming').length },
       { name: 'Ongoing', value: events.filter(e => e.status === 'Ongoing').length },
-      { name: 'Completed', value: events.filter(e => e.status === 'Completed').length },
+      { name: 'Terminated', value: events.filter(e => e.status === 'Terminated').length },
     ];
+
+    // User Engagement (Top 5 users by event assignment)
+    const allAssignedUserIds = events.reduce((acc, ev) => {
+      acc.push(ev.managerId.toString());
+      if (ev.supervisorId) acc.push(ev.supervisorId.toString());
+      acc.push(ev.clientId.toString());
+      return acc;
+    }, []);
+
+    const userCounts = allAssignedUserIds.reduce((acc, id) => {
+      acc[id] = (acc[id] || 0) + 1;
+      return acc;
+    }, {});
+
+    const topUserIds = Object.keys(userCounts)
+      .sort((a, b) => userCounts[b] - userCounts[a])
+      .slice(0, 5);
+
+    const engagedUsersData = await Promise.all(topUserIds.map(async (uid) => {
+      const u = await User.findById(uid).select('name');
+      return { name: u ? u.name : 'Unknown', value: userCounts[uid] };
+    }));
+
+    // Event Health (Req fulfillment ratio)
+    const requests = await Request.find(requestFilter);
+    const eventHealth = events.slice(0, 5).map(ev => {
+      const evReqs = requests.filter(r => r.eventId.toString() === ev._id.toString());
+      const fulfilled = evReqs.filter(r => r.status === 'Fulfilled' || r.status === 'Confirmed').length;
+      const ratio = evReqs.length > 0 ? (fulfilled / evReqs.length) * 100 : 100;
+      return { name: ev.name, health: Math.round(ratio) };
+    });
 
     // Requests by status for pie chart
     const requestsByStatus = [
@@ -76,6 +107,8 @@ router.get('/', protect, authorize('superadmin', 'systemadmin'), async (req, res
       },
       requestsByStatus,
       eventsByStatus,
+      engagedUsers: engagedUsersData,
+      eventHealth,
       recentEvents,
     });
   } catch (err) {

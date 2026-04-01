@@ -606,6 +606,12 @@ const SuperAdminDashboard = () => {
               <Button type="submit" form="resourceForm" variant="contained" disabled={submitLoading}>{submitLoading ? <CircularProgress size={24} /> : 'Save'}</Button>
             </DialogActions>
           </Dialog>
+          {/* Version Indicator for Deployment Verification */}
+          <Box sx={{ mt: 6, pt: 2, borderTop: '1px solid rgba(212,175,55,0.1)', textAlign: 'center' }}>
+            <Typography variant="caption" color="text.disabled" sx={{ fontSize: '0.6rem', letterSpacing: 1 }}>
+              ⚡ EMS CORE ENGINE — v1.0.2-LATEST (Sync: {new Date().toLocaleDateString()})
+            </Typography>
+          </Box>
         </Box>
       )}
     </Container>

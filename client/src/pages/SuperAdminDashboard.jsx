@@ -405,7 +405,7 @@ const SuperAdminDashboard = () => {
                   <TableCell>Type</TableCell>
                   <TableCell>Duration</TableCell>
                   <TableCell>Personnel & Status</TableCell>
-                  <TableCell>Requirements</TableCell>
+                  <TableCell>Resources / Requirements</TableCell>
                   <TableCell align="right">Actions</TableCell>
                 </TableRow>
               </TableHead>
@@ -456,10 +456,10 @@ const SuperAdminDashboard = () => {
                     <TextField fullWidth type="date" label="Start Date" margin="normal" size="small" InputLabelProps={{ shrink: true }} required value={eventForm.date} onChange={e => setEventForm({ ...eventForm, date: e.target.value })} />
                   </Grid>
                   <Grid item xs={6}>
-                    <TextField fullWidth type="date" label="End Date" margin="normal" size="small" InputLabelProps={{ shrink: true }} required value={eventForm.endDate} onChange={e => setEventForm({ ...eventForm, endDate: e.target.value })} />
+                    <TextField fullWidth type="date" label="End Date (optional)" margin="normal" size="small" InputLabelProps={{ shrink: true }} value={eventForm.endDate} onChange={e => setEventForm({ ...eventForm, endDate: e.target.value })} />
                   </Grid>
                 </Grid>
-                <TextField fullWidth label="Initial Resource Requirements" margin="normal" size="small" multiline rows={3} placeholder="Example: 500 Plates, 20 Staff, Main Hall..." value={eventForm.initialRequirements} onChange={e => setEventForm({ ...eventForm, initialRequirements: e.target.value })} />
+                <TextField fullWidth label="Initial Resources / Requirements" margin="normal" size="small" multiline rows={3} placeholder="Example: 500 Plates, 20 Staff, Main Hall, Sound System..." sx={{ '& .MuiOutlinedInput-root': { bgcolor: 'rgba(212,175,55,0.02)' } }} value={eventForm.initialRequirements} onChange={e => setEventForm({ ...eventForm, initialRequirements: e.target.value })} />
                 <TextField select fullWidth label="Assign Manager" margin="normal" size="small" required value={eventForm.managerId} onChange={e => setEventForm({ ...eventForm, managerId: e.target.value })}>
                   {managers.map(m => <MenuItem key={m._id} value={m._id}>{m.name}</MenuItem>)}
                 </TextField>

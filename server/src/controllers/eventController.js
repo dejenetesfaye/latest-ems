@@ -49,12 +49,18 @@ const getEvents = async (req, res) => {
 const createEvent = async (req, res) => {
   const { name, type, date, endDate, initialRequirements, managerId, supervisorId, clientId } = req.body;
   const io = req.app.get('io');
+  
+  console.log('--- CREATING EVENT ---');
+  console.log('Body:', req.body);
+  
   try {
     if (!name || !type || !date || !managerId || !clientId)
       return res.status(400).json({ message: 'Please fill all required fields (Name, Type, Date, Manager, Client)' });
 
     const event = await Event.create({
-      name, type, date, endDate, initialRequirements,
+      name, type, date, 
+      endDate: endDate || null, // Convert empty string or missing date to null
+      initialRequirements,
       superAdminId: req.user.id,
       managerId,
       supervisorId: supervisorId || null,
@@ -90,8 +96,15 @@ const getEventById = async (req, res) => {
 
 // PUT /api/events/:id
 const updateEvent = async (req, res) => {
+  console.log('--- UPDATING EVENT ---');
+  console.log('ID:', req.params.id);
+  console.log('Body:', req.body);
+  
   try {
-    const updated = await Event.findByIdAndUpdate(req.params.id, req.body, { new: true })
+    const data = { ...req.body };
+    if (data.endDate === '') data.endDate = null; // Clean up empty date
+
+    const updated = await Event.findByIdAndUpdate(req.params.id, data, { new: true })
       .populate('managerId', 'name username')
       .populate('supervisorId', 'name username')
       .populate('clientId', 'name username')

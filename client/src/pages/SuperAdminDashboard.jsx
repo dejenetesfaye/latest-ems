@@ -5,7 +5,8 @@ import {
   Container, Typography, Box, Card, CardContent, Grid, Button, CircularProgress,
   Alert, Tabs, Tab, TextField, MenuItem, Table, TableBody, TableCell,
   TableContainer, TableHead, TableRow, Paper, IconButton, Chip, Dialog,
-  DialogTitle, DialogContent, DialogActions, Snackbar, AlertTitle, Tooltip as MuiTooltip
+  DialogTitle, DialogContent, DialogActions, Snackbar, AlertTitle, Tooltip as MuiTooltip,
+  Accordion, AccordionSummary, AccordionDetails
 } from '@mui/material';
 import {
   PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, Legend,
@@ -18,6 +19,7 @@ import AssignmentIcon from '@mui/icons-material/Assignment';
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
 import AddIcon from '@mui/icons-material/Add';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 
 const COLORS = ['#D4AF37', '#FFDF00', '#C5A017', '#EEDC82', '#FFF176'];
 const STATUS_COLORS = { Pending: 'warning', Approved: 'info', Rejected: 'error', Fulfilled: 'primary', Confirmed: 'success' };
@@ -242,6 +244,19 @@ const SuperAdminDashboard = () => {
     if (!window.confirm('Delete this resource?')) return;
     try { await api.delete(`/resources/${id}`); fetchAll(); } catch { showAlert('Error deleting resource', 'error'); }
   };
+
+  // Group requests by event for Tab 4
+  const groupedRequests = requests.reduce((acc, req) => {
+    const eventId = req.eventId?._id || 'unassigned';
+    if (!acc[eventId]) {
+      acc[eventId] = {
+        event: req.eventId || { _id: 'unassigned', name: 'Other / Miscellaneous' },
+        requests: []
+      };
+    }
+    acc[eventId].requests.push(req);
+    return acc;
+  }, {});
 
   if (loading && !analytics) return <Box display="flex" justifyContent="center" mt={10}><CircularProgress size={60} color="primary" /></Box>;
 
@@ -634,51 +649,104 @@ const SuperAdminDashboard = () => {
           </Dialog>
         </Box>
       )}
-
       {/* ── TAB 4: REQUESTS (GLOBAL VISIBILITY) ── */}
       {tab === 4 && (
         <Box>
           <Typography variant="h6" fontWeight="bold" mb={2}>All Resource Requests (Control Center)</Typography>
-          <TableContainer component={Paper} elevation={2} sx={{ borderRadius: 2 }}>
-            <Table>
-              <TableHead>
-                <TableRow>
-                  <TableCell>Event & Client</TableCell>
-                  <TableCell>Resource</TableCell>
-                  <TableCell align="center">Qty</TableCell>
-                  <TableCell>Status</TableCell>
-                  <TableCell>Assigned To</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {requests.length === 0 ? (
-                  <TableRow><TableCell colSpan={5} align="center" sx={{ py: 3, color: 'text.secondary' }}>No requests found.</TableCell></TableRow>
-                ) : requests.map(r => (
-                  <TableRow key={r._id} hover>
-                    <TableCell>
-                      <Typography variant="body2" fontWeight="bold">{r.eventId?.name}</Typography>
-                      <Typography variant="caption" color="text.secondary">Client: {r.clientId?.name}</Typography>
-                    </TableCell>
-                    <TableCell>
-                      <Typography variant="body2">{r.resourceName}</Typography>
-                      <Typography variant="caption" color="primary">{r.resourceId?.category}</Typography>
-                    </TableCell>
-                    <TableCell align="center" fontWeight="bold">{r.quantity}</TableCell>
-                    <TableCell>
-                      <Chip label={r.status} size="small" 
-                        color={r.status === 'Confirmed' ? 'success' : r.status === 'Rejected' ? 'error' : r.status === 'Pending' ? 'warning' : 'info'} 
-                        sx={{ fontSize: '0.7rem' }} 
+          {requests.length === 0 ? (
+            <Paper elevation={1} sx={{ p: 4, textAlign: 'center', borderRadius: 2 }}>
+              <Typography color="text.secondary">No requests found.</Typography>
+            </Paper>
+          ) : (
+            Object.values(groupedRequests).map((group, index) => (
+              <Accordion 
+                key={group.event._id} 
+                defaultExpanded={index === 0} 
+                sx={{ 
+                  mb: 2, 
+                  borderRadius: 2, 
+                  overflow: 'hidden',
+                  border: '1px solid rgba(212,175,55,0.2)',
+                  '&:before': { display: 'none' },
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.05)'
+                }}
+              >
+                <AccordionSummary 
+                  expandIcon={<ExpandMoreIcon sx={{ color: 'primary.main' }} />}
+                  sx={{ bgcolor: 'rgba(212,175,55,0.02)' }}
+                >
+                  <Box display="flex" alignItems="center" gap={2} width="100%">
+                    <Box>
+                      <Typography variant="subtitle1" fontWeight="bold" color="primary">{group.event.name}</Typography>
+                      {group.event.clientId && (
+                        <Typography variant="caption" color="text.secondary">
+                          Client: {group.event.clientId.name || 'N/A'}
+                        </Typography>
+                      )}
+                    </Box>
+                    <Box ml="auto" mr={2} display="flex" gap={1}>
+                      <Chip label={`${group.requests.length} Items`} size="small" variant="outlined" color="primary" sx={{ height: 20, fontSize: '0.65rem' }} />
+                      <Chip 
+                        label={group.requests.some(r => r.status === 'Pending') ? 'Action Needed' : 'Processed'} 
+                        size="small" 
+                        color={group.requests.some(r => r.status === 'Pending') ? 'warning' : 'success'} 
+                        sx={{ height: 20, fontSize: '0.65rem' }} 
                       />
-                    </TableCell>
-                    <TableCell>
-                      <Typography variant="caption" display="block">Mgr: {r.managerId?.name}</Typography>
-                      {r.supervisorId && <Typography variant="caption" display="block" color="text.secondary">Sup: {r.supervisorId.name}</Typography>}
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
+                    </Box>
+                  </Box>
+                </AccordionSummary>
+                <AccordionDetails sx={{ p: 0 }}>
+                  <TableContainer>
+                    <Table size="small">
+                      <TableHead>
+                        <TableRow sx={{ bgcolor: 'rgba(0,0,0,0.02)' }}>
+                          <TableCell sx={{ fontWeight: 'bold' }}>Resource</TableCell>
+                          <TableCell align="center" sx={{ fontWeight: 'bold' }}>Qty</TableCell>
+                          <TableCell sx={{ fontWeight: 'bold' }}>Status</TableCell>
+                          <TableCell sx={{ fontWeight: 'bold' }}>Personnel Details</TableCell>
+                        </TableRow>
+                      </TableHead>
+                      <TableBody>
+                        {group.requests.map(r => (
+                          <TableRow key={r._id} hover>
+                            <TableCell>
+                              <Typography variant="body2" fontWeight="medium">{r.resourceName}</Typography>
+                              <Typography variant="caption" color="primary" sx={{ opacity: 0.8 }}>
+                                {r.resourceId?.category?.replace('_', ' ') || 'Resource'}
+                              </Typography>
+                            </TableCell>
+                            <TableCell align="center">
+                              <Typography fontWeight="bold">{r.quantity}</Typography>
+                            </TableCell>
+                            <TableCell>
+                              <Chip 
+                                label={r.status} 
+                                size="small" 
+                                color={r.status === 'Confirmed' ? 'success' : r.status === 'Rejected' ? 'error' : r.status === 'Pending' ? 'warning' : 'info'} 
+                                sx={{ fontSize: '0.65rem', height: 20 }} 
+                              />
+                            </TableCell>
+                            <TableCell>
+                              <Box display="flex" flexDirection="column">
+                                <Typography variant="caption" display="flex" alignItems="center" gap={0.5}>
+                                  <strong>M:</strong> {r.managerId?.name || 'Unassigned'}
+                                </Typography>
+                                {r.supervisorId && (
+                                  <Typography variant="caption" color="text.secondary" display="flex" alignItems="center" gap={0.5}>
+                                    <strong>S:</strong> {r.supervisorId.name}
+                                  </Typography>
+                                )}
+                              </Box>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </TableContainer>
+                </AccordionDetails>
+              </Accordion>
+            ))
+          )}
         </Box>
       )}
 

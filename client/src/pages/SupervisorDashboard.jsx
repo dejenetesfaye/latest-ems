@@ -51,9 +51,23 @@ const SupervisorDashboard = () => {
     }
   };
 
+  const handleApproveReturn = async (id) => {
+    try {
+      await api.put(`/requests/${id}/status`, { status: 'Returned' });
+      setAlert({ show: true, message: 'Return receipt approved. Sent to Manager for final restocking.', severity: 'success' });
+      fetchData();
+    } catch (err) {
+      setAlert({ show: true, message: err.response?.data?.message || 'Error', severity: 'error' });
+    }
+  };
+
   const approved = requests.filter(r => r.status === 'Approved');
-  const history = requests.filter(r => ['Fulfilled', 'Confirmed'].includes(r.status));
-  const getColor = (status) => ({ Approved: 'info', Fulfilled: 'primary', Confirmed: 'success' }[status] || 'default');
+  const returning = requests.filter(r => r.status === 'Returning');
+  const history = requests.filter(r => ['Fulfilled', 'Confirmed', 'Returned', 'Stocked'].includes(r.status));
+  const getColor = (status) => ({ 
+    Approved: 'info', Fulfilled: 'primary', Confirmed: 'success', 
+    Returning: 'secondary', Returned: 'info', Stocked: 'success' 
+  }[status] || 'default');
 
   return (
     <Container maxWidth="xl" sx={{ py: 4 }}>
@@ -147,6 +161,44 @@ const SupervisorDashboard = () => {
           </TableBody>
         </Table>
       </TableContainer>
+
+      {/* Resource Returns Section */}
+      {returning.length > 0 && (
+        <Box mb={5}>
+          <Typography variant="h6" fontWeight="bold" mb={2} color="secondary">
+            Incoming Resource Returns — Verify Receipt
+            <Chip label={returning.length} color="secondary" size="small" sx={{ ml: 2 }} />
+          </Typography>
+          <TableContainer component={Paper} elevation={3} sx={{ borderRadius: 2, border: '1px solid rgba(156, 39, 176, 0.2)' }}>
+            <Table>
+              <TableHead sx={{ bgcolor: 'rgba(156, 39, 176, 0.05)' }}>
+                <TableRow>
+                  <TableCell>Event</TableCell>
+                  <TableCell>Resource</TableCell>
+                  <TableCell>Qty To Return</TableCell>
+                  <TableCell>Client</TableCell>
+                  <TableCell align="right">Action</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {returning.map(req => (
+                  <TableRow key={req._id} hover>
+                    <TableCell>{req.eventId?.name}</TableCell>
+                    <TableCell fontWeight="bold">{req.resourceName}</TableCell>
+                    <TableCell><Typography fontWeight="bold" color="secondary">{req.quantity}</Typography></TableCell>
+                    <TableCell>{req.clientId?.name}</TableCell>
+                    <TableCell align="right">
+                      <Button variant="contained" color="secondary" size="small" onClick={() => handleApproveReturn(req._id)} startIcon={<CheckCircleIcon />}>
+                        Approve Receipt
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        </Box>
+      )}
 
       {history.length > 0 && (
         <>

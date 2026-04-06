@@ -11,7 +11,11 @@ import TaskAltIcon from '@mui/icons-material/TaskAlt';
 import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 const COLORS = ['#D4AF37', '#FFDF00', '#C5A017', '#EEDC82', '#FFF176'];
-const STATUS_COLOR = { Pending: 'warning', Approved: 'info', Rejected: 'error', Fulfilled: 'primary', Confirmed: 'success' };
+const STATUS_COLOR = { 
+  Pending: 'warning', Approved: 'info', Rejected: 'error', 
+  Fulfilled: 'primary', Confirmed: 'success', 
+  Returning: 'secondary', Returned: 'info', Stocked: 'success' 
+};
 
 const ClientDashboard = () => {
   const socket = useContext(SocketContext);
@@ -70,6 +74,18 @@ const ClientDashboard = () => {
     try {
       await api.put(`/requests/${id}/status`, { status: 'Confirmed' });
       setAlert({ show: true, message: 'Thank you for confirming receipt!', severity: 'success' });
+      fetchData();
+    } catch (err) {
+      setAlert({ show: true, message: err.response?.data?.message || 'Error', severity: 'error' });
+    }
+  };
+
+  const handleReturn = async (id) => {
+    if (!window.confirm('Are you sure you want to return these unused resources back to logistics?')) return;
+    try {
+      await api.put(`/requests/${id}/status`, { status: 'Returning' });
+      setAlert({ show: true, message: 'Return initiated. Logistics team has been notified.', severity: 'info' });
+      fetchData();
     } catch (err) {
       setAlert({ show: true, message: err.response?.data?.message || 'Error', severity: 'error' });
     }
@@ -202,8 +218,21 @@ const ClientDashboard = () => {
                         <Button size="small" variant="contained" color="success" startIcon={<TaskAltIcon />} onClick={() => handleConfirm(req._id)}>
                           Confirm Received
                         </Button>
-                      ) : req.status === 'Confirmed' ? (
-                        <Typography variant="caption" color="success.main" fontWeight="bold">✅ CONFIRMED</Typography>
+                      ) : (req.status === 'Confirmed' || req.status === 'Fulfilled') ? (
+                        <Box display="flex" flexDirection="column" gap={1} alignItems="flex-end">
+                          <Typography variant="caption" color="success.main" fontWeight="bold">✅ {req.status === 'Confirmed' ? 'CONFIRMED' : 'FULFILLED'}</Typography>
+                          <Button size="small" variant="outlined" color="secondary" onClick={() => handleReturn(req._id)}>
+                            Return Unused
+                          </Button>
+                        </Box>
+                      ) : ['Returning', 'Returned', 'Stocked'].includes(req.status) ? (
+                        <Box textAlign="right">
+                          <Chip label={req.status === 'Returning' ? 'RETURNING...' : req.status === 'Returned' ? 'ARRIVED @ LOGISTICS' : 'STOCKED ✅'} 
+                                color={req.status === 'Stocked' ? 'success' : 'secondary'} size="small" />
+                          <Typography variant="caption" display="block" color="text.secondary" mt={0.5}>
+                            {req.status === 'Returning' ? 'Awaiting Supervisor Approval' : req.status === 'Returned' ? 'Awaiting Manager Restock' : 'Inventory Updated'}
+                          </Typography>
+                        </Box>
                       ) : (
                         <Typography variant="caption" color="text.disabled">— awaited —</Typography>
                       )}

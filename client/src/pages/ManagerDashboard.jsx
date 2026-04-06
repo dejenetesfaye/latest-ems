@@ -9,7 +9,11 @@ import {
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import CancelIcon from '@mui/icons-material/Cancel';
 
-const STATUS_COLOR = { Pending: 'warning', Approved: 'info', Rejected: 'error', Fulfilled: 'primary', Confirmed: 'success' };
+const STATUS_COLOR = { 
+  Pending: 'warning', Approved: 'info', Rejected: 'error', 
+  Fulfilled: 'primary', Confirmed: 'success',
+  Returning: 'secondary', Returned: 'info', Stocked: 'success'
+};
 
 const ManagerDashboard = () => {
   const socket = useContext(SocketContext);
@@ -61,7 +65,8 @@ const ManagerDashboard = () => {
   };
 
   const pendingRequests = requests.filter(r => r.status === 'Pending');
-  const otherRequests = requests.filter(r => r.status !== 'Pending');
+  const returnedRequests = requests.filter(r => r.status === 'Returned');
+  const otherRequests = requests.filter(r => !['Pending', 'Returned'].includes(r.status));
 
   return (
     <Container maxWidth="xl" sx={{ py: 4 }}>
@@ -158,6 +163,44 @@ const ManagerDashboard = () => {
           </TableBody>
         </Table>
       </TableContainer>
+
+      {/* Returned for Restock Section */}
+      {returnedRequests.length > 0 && (
+        <Box mb={5}>
+          <Typography variant="h6" fontWeight="bold" mb={2} color="secondary">
+            Verified Returns — Ready for Restock
+            <Chip label={returnedRequests.length} color="secondary" size="small" sx={{ ml: 2 }} />
+          </Typography>
+          <TableContainer component={Paper} elevation={3} sx={{ borderRadius: 2, border: '1px solid rgba(156, 39, 176, 0.2)' }}>
+            <Table>
+              <TableHead sx={{ bgcolor: 'rgba(156, 39, 176, 0.05)' }}>
+                <TableRow>
+                  <TableCell>Event</TableCell>
+                  <TableCell>Resource</TableCell>
+                  <TableCell>Quantity</TableCell>
+                  <TableCell>Client</TableCell>
+                  <TableCell align="right">Action</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {returnedRequests.map(req => (
+                  <TableRow key={req._id} hover>
+                    <TableCell>{req.eventId?.name}</TableCell>
+                    <TableCell fontWeight="bold">{req.resourceName}</TableCell>
+                    <TableCell><Typography fontWeight="bold" color="secondary">x{req.quantity}</Typography></TableCell>
+                    <TableCell>{req.clientId?.name}</TableCell>
+                    <TableCell align="right">
+                      <Button variant="contained" color="secondary" size="small" onClick={() => handleStatus(req._id, 'Stocked')} startIcon={<CheckCircleIcon />}>
+                        Confirm & Restock
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        </Box>
+      )}
 
       {/* All Request History */}
       {otherRequests.length > 0 && (

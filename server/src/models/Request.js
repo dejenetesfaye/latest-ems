@@ -16,7 +16,7 @@ const requestSchema = new mongoose.Schema({
   note: { type: String, default: '' },
   status: {
     type: String,
-    enum: ['Pending', 'Approved', 'Rejected', 'Fulfilled', 'Confirmed'],
+    enum: ['Pending', 'Approved', 'Rejected', 'Fulfilled', 'Confirmed', 'Returning', 'Returned', 'Stocked'],
     default: 'Pending',
   },
   clientId: {

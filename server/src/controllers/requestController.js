@@ -115,9 +115,11 @@ const updateRequestStatus = async (req, res) => {
     } else if (role === 'manager' && request.managerId?.toString() === id) {
       allowed = ['Approved', 'Rejected'].includes(status) && request.status === 'Pending';
     } else if (role === 'supervisor' && request.supervisorId?.toString() === id) {
-      allowed = status === 'Fulfilled' && request.status === 'Approved';
+      allowed = (status === 'Fulfilled' && request.status === 'Approved') || (status === 'Returned' && request.status === 'Returning');
     } else if (role === 'client' && request.clientId.toString() === id) {
-      allowed = status === 'Confirmed' && request.status === 'Fulfilled';
+      allowed = (status === 'Confirmed' && request.status === 'Fulfilled') || (status === 'Returning' && ['Fulfilled', 'Confirmed'].includes(request.status));
+    } else if (role === 'manager' && request.managerId?.toString() === id) {
+      allowed = ['Approved', 'Rejected'].includes(status) && request.status === 'Pending' || (status === 'Stocked' && request.status === 'Returned');
     }
 
     if (!allowed)
@@ -126,6 +128,22 @@ const updateRequestStatus = async (req, res) => {
     request.status = status;
     if (['Approved', 'Rejected'].includes(status)) request.respondedAt = new Date();
     if (status === 'Fulfilled') request.fulfilledAt = new Date();
+    
+    // RESTOCK LOGIC: When manager confirms return
+    if (status === 'Stocked') {
+      const resource = await Resource.findById(request.resourceId);
+      if (resource) {
+        resource.availableQuantity += request.quantity;
+        await resource.save();
+        
+        // Notify of restock
+        const io = req.app.get('io');
+        io.emit('inventory_alert', { 
+          message: `Restock Alert: ${request.quantity}x ${resource.name} have been returned and put back into stock.`,
+          superAdminId: (await Event.findById(request.eventId)).superAdminId
+        });
+      }
+    }
     
     await request.save();
 

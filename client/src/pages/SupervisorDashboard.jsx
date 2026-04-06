@@ -185,7 +185,11 @@ const SupervisorDashboard = () => {
                   <TableRow key={req._id} hover>
                     <TableCell>{req.eventId?.name}</TableCell>
                     <TableCell fontWeight="bold">{req.resourceName}</TableCell>
-                    <TableCell><Typography fontWeight="bold" color="secondary">{req.quantity}</Typography></TableCell>
+                    <TableCell>
+                      <Typography fontWeight="bold" color="secondary">
+                        {req.returnQuantity} <Typography variant="caption" color="text.secondary">(of {req.quantity})</Typography>
+                      </Typography>
+                    </TableCell>
                     <TableCell>{req.clientId?.name}</TableCell>
                     <TableCell align="right">
                       <Button variant="contained" color="secondary" size="small" onClick={() => handleApproveReturn(req._id)} startIcon={<CheckCircleIcon />}>

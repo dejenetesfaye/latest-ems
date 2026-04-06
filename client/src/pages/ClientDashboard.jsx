@@ -4,7 +4,8 @@ import { SocketContext } from '../context/SocketContext';
 import {
   Container, Typography, Box, Card, CardContent, Grid, Button,
   CircularProgress, Alert, TextField, MenuItem, Table, TableBody,
-  TableCell, TableContainer, TableHead, TableRow, Paper, Chip
+  TableCell, TableContainer, TableHead, TableRow, Paper, Chip,
+  Dialog, DialogTitle, DialogContent, DialogActions
 } from '@mui/material';
 import SendIcon from '@mui/icons-material/Send';
 import TaskAltIcon from '@mui/icons-material/TaskAlt';
@@ -26,6 +27,7 @@ const ClientDashboard = () => {
   const [submitLoading, setSubmitLoading] = useState(false);
   const [alert, setAlert] = useState({ show: false, message: '', severity: 'success' });
   const [form, setForm] = useState({ resourceId: '', quantity: 1, note: '' });
+  const [returnModal, setReturnModal] = useState({ open: false, requestId: null, max: 0, quantity: 1 });
 
   const fetchData = async () => {
     try {
@@ -80,11 +82,18 @@ const ClientDashboard = () => {
     }
   };
 
-  const handleReturn = async (id) => {
-    if (!window.confirm('Are you sure you want to return these unused resources back to logistics?')) return;
+  const handleReturnInitiate = (req) => {
+    setReturnModal({ open: true, requestId: req._id, max: req.quantity, quantity: req.quantity });
+  };
+
+  const handleReturnSubmit = async () => {
     try {
-      await api.put(`/requests/${id}/status`, { status: 'Returning' });
-      setAlert({ show: true, message: 'Return initiated. Logistics team has been notified.', severity: 'info' });
+      await api.put(`/requests/${returnModal.requestId}/status`, { 
+        status: 'Returning', 
+        returnQuantity: Number(returnModal.quantity) 
+      });
+      setAlert({ show: true, message: `Return initiated for ${returnModal.quantity} units. Logistics team notified.`, severity: 'info' });
+      setReturnModal({ open: false, requestId: null, max: 0, quantity: 1 });
       fetchData();
     } catch (err) {
       setAlert({ show: true, message: err.response?.data?.message || 'Error', severity: 'error' });
@@ -221,13 +230,13 @@ const ClientDashboard = () => {
                       ) : (req.status === 'Confirmed' || req.status === 'Fulfilled') ? (
                         <Box display="flex" flexDirection="column" gap={1} alignItems="flex-end">
                           <Typography variant="caption" color="success.main" fontWeight="bold">✅ {req.status === 'Confirmed' ? 'CONFIRMED' : 'FULFILLED'}</Typography>
-                          <Button size="small" variant="outlined" color="secondary" onClick={() => handleReturn(req._id)}>
+                          <Button size="small" variant="outlined" color="secondary" onClick={() => handleReturnInitiate(req)}>
                             Return Unused
                           </Button>
                         </Box>
                       ) : ['Returning', 'Returned', 'Stocked'].includes(req.status) ? (
                         <Box textAlign="right">
-                          <Chip label={req.status === 'Returning' ? 'RETURNING...' : req.status === 'Returned' ? 'ARRIVED @ LOGISTICS' : 'STOCKED ✅'} 
+                          <Chip label={req.status === 'Returning' ? `RETURNING (${req.returnQuantity})` : req.status === 'Returned' ? `ARRIVED (${req.returnQuantity})` : `STOCKED (+${req.returnQuantity})`} 
                                 color={req.status === 'Stocked' ? 'success' : 'secondary'} size="small" />
                           <Typography variant="caption" display="block" color="text.secondary" mt={0.5}>
                             {req.status === 'Returning' ? 'Awaiting Supervisor Approval' : req.status === 'Returned' ? 'Awaiting Manager Restock' : 'Inventory Updated'}
@@ -244,6 +253,28 @@ const ClientDashboard = () => {
           </TableContainer>
         </Grid>
       </Grid>
+      {/* Return Quantity Modal */}
+      <Dialog open={returnModal.open} onClose={() => setReturnModal({ ...returnModal, open: false })}>
+        <DialogTitle sx={{ fontWeight: 'bold', color: 'primary.main' }}>Return Unused Resources</DialogTitle>
+        <DialogContent>
+          <Typography variant="body2" mb={2}>Specify the quantity of unused items you are returning back to logistics.</Typography>
+          <TextField
+            fullWidth
+            type="number"
+            label="Quantity to Return"
+            inputProps={{ min: 1, max: returnModal.max }}
+            value={returnModal.quantity}
+            onChange={(e) => setReturnModal({ ...returnModal, quantity: e.target.value })}
+            helperText={`Maximum available to return: ${returnModal.max}`}
+          />
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2 }}>
+          <Button onClick={() => setReturnModal({ ...returnModal, open: false })} color="inherit">Cancel</Button>
+          <Button onClick={handleReturnSubmit} variant="contained" color="secondary" disabled={!returnModal.quantity || returnModal.quantity > returnModal.max || returnModal.quantity < 1}>
+            Initiate Return
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Container>
   );
 };

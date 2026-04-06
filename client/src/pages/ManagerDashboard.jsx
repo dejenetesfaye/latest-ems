@@ -187,11 +187,15 @@ const ManagerDashboard = () => {
                   <TableRow key={req._id} hover>
                     <TableCell>{req.eventId?.name}</TableCell>
                     <TableCell fontWeight="bold">{req.resourceName}</TableCell>
-                    <TableCell><Typography fontWeight="bold" color="secondary">x{req.quantity}</Typography></TableCell>
+                    <TableCell>
+                      <Typography fontWeight="bold" color="secondary">
+                        x{req.returnQuantity} <Typography variant="caption" color="text.secondary">(of {req.quantity})</Typography>
+                      </Typography>
+                    </TableCell>
                     <TableCell>{req.clientId?.name}</TableCell>
                     <TableCell align="right">
                       <Button variant="contained" color="secondary" size="small" onClick={() => handleStatus(req._id, 'Stocked')} startIcon={<CheckCircleIcon />}>
-                        Confirm & Restock
+                        Restock {req.returnQuantity} Units
                       </Button>
                     </TableCell>
                   </TableRow>

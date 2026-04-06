@@ -128,18 +128,29 @@ const updateRequestStatus = async (req, res) => {
     request.status = status;
     if (['Approved', 'Rejected'].includes(status)) request.respondedAt = new Date();
     if (status === 'Fulfilled') request.fulfilledAt = new Date();
+
+    // Partial Return Initiation by Client
+    if (status === 'Returning') {
+      const { returnQuantity } = req.body;
+      if (!returnQuantity || returnQuantity <= 0 || returnQuantity > request.quantity) {
+        return res.status(400).json({ message: `Invalid return quantity. Must be between 1 and ${request.quantity}` });
+      }
+      request.returnQuantity = returnQuantity;
+    }
     
     // RESTOCK LOGIC: When manager confirms return
     if (status === 'Stocked') {
       const resource = await Resource.findById(request.resourceId);
       if (resource) {
-        resource.availableQuantity += request.quantity;
+        // Restock only the returned amount
+        const restockAmount = request.returnQuantity || request.quantity;
+        resource.availableQuantity += restockAmount;
         await resource.save();
         
         // Notify of restock
         const io = req.app.get('io');
         io.emit('inventory_alert', { 
-          message: `Restock Alert: ${request.quantity}x ${resource.name} have been returned and put back into stock.`,
+          message: `Restock Alert: ${restockAmount} units of ${resource.name} have been put back into stock.`,
           superAdminId: (await Event.findById(request.eventId)).superAdminId
         });
       }

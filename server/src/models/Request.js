@@ -19,6 +19,7 @@ const requestSchema = new mongoose.Schema({
     enum: ['Pending', 'Approved', 'Rejected', 'Fulfilled', 'Confirmed', 'Returning', 'Returned', 'Stocked'],
     default: 'Pending',
   },
+  returnQuantity: { type: Number, default: 0 },
   clientId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',

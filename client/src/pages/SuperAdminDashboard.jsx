@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useContext } from 'react';
 import api from '../services/api';
 import { SocketContext } from '../context/SocketContext';
+import { AuthContext } from '../context/AuthContext';
 import {
   Container, Typography, Box, Card, CardContent, Grid, Button, CircularProgress,
   Alert, Tabs, Tab, TextField, MenuItem, Table, TableBody, TableCell,
@@ -38,6 +39,7 @@ const StatCard = ({ icon, label, value }) => (
 
 const SuperAdminDashboard = () => {
   const socket = useContext(SocketContext);
+  const { user } = useContext(AuthContext);
 
   const [tab, setTab] = useState(0);
   const [analytics, setAnalytics] = useState(null);
@@ -270,7 +272,9 @@ const SuperAdminDashboard = () => {
         </Alert>
       </Snackbar>
 
-      <Typography variant="h4" fontWeight="bold" color="primary" mb={1}>Super Admin Dashboard</Typography>
+      <Typography variant="h4" fontWeight="bold" color="primary" mb={1}>
+        {user?.organizationName ? `${user.organizationName} Dashboard` : 'Super Admin Dashboard'}
+      </Typography>
       <Typography variant="body2" color="text.secondary" mb={3}>Manage organization and monitor logistics</Typography>
 
       {globalAlert.show && <Alert severity={globalAlert.severity} sx={{ mb: 3 }} onClose={() => setGlobalAlert({ ...globalAlert, show: false })}>{globalAlert.message}</Alert>}

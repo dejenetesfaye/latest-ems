@@ -17,6 +17,7 @@ const loginUser = async (req, res) => {
         username: user.username,
         role: user.role,
         organizationId: user.organizationId,
+        organizationName: user.organizationName,
         token: generateToken(user._id, user.role),
       });
     }
@@ -28,7 +29,7 @@ const loginUser = async (req, res) => {
 
 // @route POST /api/auth/register — used by systemadmin & superadmin
 const registerUser = async (req, res) => {
-  const { name, username, password, role } = req.body;
+  const { name, username, password, role, organizationName } = req.body;
   const caller = req.user;
 
   // Role creation rules
@@ -59,6 +60,7 @@ const registerUser = async (req, res) => {
       password: hashedPassword,
       role,
       organizationId,
+      organizationName: role === 'superadmin' ? organizationName : '',
       createdBy: caller.id,
     });
 
@@ -68,6 +70,7 @@ const registerUser = async (req, res) => {
       username: user.username,
       role: user.role,
       organizationId: user.organizationId,
+      organizationName: user.organizationName,
     });
   } catch (err) {
     res.status(500).json({ message: 'Server error', error: err.message });

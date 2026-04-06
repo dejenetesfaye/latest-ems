@@ -15,7 +15,7 @@ const SystemAdminDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [submitLoading, setSubmitLoading] = useState(false);
   const [alert, setAlert] = useState({ show: false, message: '', severity: 'success' });
-  const [form, setForm] = useState({ name: '', username: '', password: '' });
+  const [form, setForm] = useState({ name: '', username: '', password: '', organizationName: '' });
 
   const fetchSuperAdmins = async () => {
     try {
@@ -37,7 +37,7 @@ const SystemAdminDashboard = () => {
     try {
       await api.post('/auth/register', { ...form, role: 'superadmin' });
       setAlert({ show: true, message: 'Super Admin (Event Organizer) created!', severity: 'success' });
-      setForm({ name: '', username: '', password: '' });
+      setForm({ name: '', username: '', password: '', organizationName: '' });
       fetchSuperAdmins();
     } catch (err) {
       setAlert({ show: true, message: err.response?.data?.message || 'Error creating super admin', severity: 'error' });
@@ -95,6 +95,8 @@ const SystemAdminDashboard = () => {
               )}
               <form onSubmit={handleCreate}>
                 <TextField fullWidth label="Organization Name" margin="normal" size="small" required
+                  value={form.organizationName} onChange={e => setForm({ ...form, organizationName: e.target.value })} />
+                <TextField fullWidth label="Contact Person Name" margin="normal" size="small" required
                   value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} />
                 <TextField fullWidth label="Username" margin="normal" size="small" required
                   value={form.username} onChange={e => setForm({ ...form, username: e.target.value })} />
@@ -116,6 +118,7 @@ const SystemAdminDashboard = () => {
               <TableHead sx={{ bgcolor: '#f3f4f6' }}>
                 <TableRow>
                   <TableCell><strong>Organization</strong></TableCell>
+                  <TableCell><strong>Contact</strong></TableCell>
                   <TableCell><strong>Username</strong></TableCell>
                   <TableCell><strong>Created</strong></TableCell>
                   <TableCell align="right"><strong>Actions</strong></TableCell>
@@ -128,7 +131,8 @@ const SystemAdminDashboard = () => {
                   <TableRow><TableCell colSpan={4} align="center" sx={{ py: 4, color: 'text.secondary' }}>No organizers yet.</TableCell></TableRow>
                 ) : superAdmins.map(sa => (
                   <TableRow key={sa._id} hover>
-                    <TableCell><strong>{sa.name}</strong></TableCell>
+                    <TableCell><strong>{sa.organizationName || 'N/A'}</strong></TableCell>
+                    <TableCell>{sa.name}</TableCell>
                     <TableCell><Chip label={sa.username} size="small" variant="outlined" /></TableCell>
                     <TableCell>{new Date(sa.createdAt).toLocaleDateString()}</TableCell>
                     <TableCell align="right">

@@ -21,6 +21,10 @@ const userSchema = new mongoose.Schema({
     ref: 'User',
     default: null,
   },
+  organizationName: {
+    type: String,
+    default: '',
+  },
 }, { timestamps: true });
 
 module.exports = mongoose.model('User', userSchema);
